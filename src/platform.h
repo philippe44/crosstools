@@ -68,6 +68,9 @@
 #define last_error() errno
 #define ERROR_WOULDBLOCK EWOULDBLOCK
 
+// for now
+#define VALGRIND_MAKE_MEM_DEFINED(x,y)
+
 int SendARP(in_addr_t src, in_addr_t dst, uint8_t mac[], uint32_t *size);
 #define fresize(f,s) ftruncate(fileno(f), s)
 char *strlwr(char *str);

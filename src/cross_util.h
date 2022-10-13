@@ -30,9 +30,9 @@ Queues
 */
 typedef struct {
 #ifdef HAS_PTHREAD
-	pthread_mutex_t mutex;
+	pthread_mutex_t* mutex;
 #elif defined(_WIN32)
-	HANDLE mutex;
+	HANDLE* mutex;
 #else 
 	void* mutex;
 #endif

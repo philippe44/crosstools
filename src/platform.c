@@ -8,14 +8,18 @@
  */
  
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include <stdarg.h>
 #include <assert.h>
+#include <ctype.h>
+
+#ifdef _WIN32
+#include <VersionHelpers.h>
+#endif
 
 #include "platform.h"
 
-#if WIN
-#include <VersionHelpers.h>
-#endif
 
 /*----------------------------------------------------------------------------*/
 bool crosscheck_version(int version) {

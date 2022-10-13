@@ -8,6 +8,8 @@
  */
 
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include <stdarg.h>
 
 #include "platform.h"
@@ -21,11 +23,11 @@
 #endif
 
 #ifdef HAS_PTHREAD
-#define mutex_lock(m) pthread_mutex_lock(&m)
-#define mutex_unlock(m) pthread_mutex_unlock(&m)
+#define mutex_lock(m) pthread_mutex_lock(m)
+#define mutex_unlock(m) pthread_mutex_unlock(m)
 #elif defined(_WIN32)
-#define mutex_lock(m) WaitForSingleObject(m, INFINITE)
-#define mutex_unlock(m) ReleaseMutex(m)
+#define mutex_lock(m) WaitForSingleObject(*m, INFINITE)
+#define mutex_unlock(m) ReleaseMutex(*m)
 #else
 #define mutex_lock(m) 
 #define mutex_unlock(m)
@@ -43,7 +45,7 @@ extern log_level	util_loglevel;
 /*----------------------------------------------------------------------------*/
 /* locals */
 /*----------------------------------------------------------------------------*/
-static log_level 	*loglevel = &util_loglevel;
+static __attribute__((unused)) log_level *loglevel = &util_loglevel;
 
 /*----------------------------------------------------------------------------*/
 /* 																			  */
@@ -57,9 +59,11 @@ void queue_init(queue_t *queue, bool mutex, void (*cleanup)(void*)) {
 	queue->mutex = NULL;
 	if (mutex) {
 #ifdef HAS_PTHREAD
-		pthread_mutex_init(&queue->mutex, NULL);
+		queue->mutex = (pthread_mutex_t*) malloc(sizeof(pthread_mutex_t));
+		pthread_mutex_init(queue->mutex, NULL);
 #elif defined(_WIN32)
-		queue->mutex = CreateMutex(NULL, FALSE, NULL);
+		queue->mutex = (HANDLE*) malloc(sizeof(HANDLE));
+		*queue->mutex = CreateMutex(NULL, FALSE, NULL);
 #endif
 	}
 }
@@ -125,10 +129,11 @@ void queue_flush(queue_t *queue) {
 	if (queue->mutex) {
 		mutex_unlock(queue->mutex);
 #ifdef HAS_PTHREAD
-		pthread_mutex_destroy(&queue->mutex);
+		pthread_mutex_destroy(queue->mutex);
 #else 
-		CloseHandle(queue->mutex);
+		CloseHandle(*queue->mutex);
 #endif
+		free(queue->mutex);
 	}
 }
 
@@ -284,36 +289,6 @@ char* strextract(char *s1, char *beg, char *end)
 
 	return res;
 }
-
-#if !WIN
- /*---------------------------------------------------------------------------*/
-char* itoa(int value, char* str, int radix) {
-	static char dig[] =
-		"0123456789"
-		"abcdefghijklmnopqrstuvwxyz";
-	int n = 0, neg = 0;
-	unsigned int v;
-	char* p, *q;
-	char c;
-
-	if (radix == 10 && value < 0) {
-		value = -value;
-		neg = 1;
-	}
-	v = value;
-	do {
-		str[n++] = dig[v%radix];
-		v /= radix;
-	} while (v);
-	if (neg)
-		str[n++] = '-';
-	str[n] = '\0';
-
-	for (p = str, q = p + (n-1); p < q; ++p, --q)
-		c = *p, *p = *q, *q = c;
-	return str;
-}
-#endif
 
 /*---------------------------------------------------------------------------*/
 int strremovechar(char* str, char c)

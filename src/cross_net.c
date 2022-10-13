@@ -7,13 +7,16 @@
  *
  */
 
-#include <stdarg.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <stdarg.h>
 
 #include "platform.h"
 
 #if LINUX || OSX || FREEBSD || SUNOS
 #include <sys/ioctl.h>
+#include <fcntl.h>
 #include <net/if.h>
 #include <net/if_arp.h>
 #include <netdb.h>
@@ -534,7 +537,6 @@ int open_udp_socket(struct in_addr host, unsigned short* port, bool blocking) {
 /*----------------------------------------------------------------------------*/
 int bind_socket(struct in_addr host, unsigned short* port, int mode) {
 	int sock;
-	socklen_t len = sizeof(struct sockaddr);
 
 	if ((sock = socket(AF_INET, mode, 0)) < 0) {
 		LOG_ERROR("cannot create socket %d", sock);
