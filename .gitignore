@@ -40,13 +40,13 @@
 *.dSYM/
 *.su
 *.idb
-*.pdb
 
-# Kernel Module Compile Results
-*.mod*
-*.cmd
-.tmp_versions/
-modules.order
-Module.symvers
-Mkfile.old
-dkms.conf
+# VS
+.vs/
+build/
+*.vcxproj*
+*.sln
+
+pthreads4w/
+
+*.bak
