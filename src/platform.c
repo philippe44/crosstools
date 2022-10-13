@@ -14,12 +14,11 @@
 #include <assert.h>
 #include <ctype.h>
 
-#ifdef _WIN32
-#include <VersionHelpers.h>
-#endif
-
 #include "platform.h"
 
+#ifdef WIN
+#include <VersionHelpers.h>
+#endif
 
 /*----------------------------------------------------------------------------*/
 bool crosscheck_version(int version) {
