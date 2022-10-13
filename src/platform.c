@@ -16,7 +16,7 @@
 
 #include "platform.h"
 
-#ifdef WIN
+#if WIN
 #include <VersionHelpers.h>
 #endif
 
