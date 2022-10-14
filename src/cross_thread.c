@@ -3,7 +3,9 @@
  *
  */
 
+#include <stdlib.h>
 #include <stdarg.h>
+#include <stdbool.h>
 
 #if OSX
 #include <sys/time.h>
@@ -18,6 +20,7 @@
 /*----------------------------------------------------------------------------*/
 static pthread_mutex_t	wake_mutex;
 static pthread_cond_t	wake_cond;
+static bool wake_initialized;
 
 /*----------------------------------------------------------------------------*/
 /* 																			  */
@@ -26,15 +29,15 @@ static pthread_cond_t	wake_cond;
 /*----------------------------------------------------------------------------*/
 
 /*----------------------------------------------------------------------------*/
-static int wakeable_close(void) {
+static void wakeable_close(void) {
 	pthread_mutex_destroy(&wake_mutex);
 	pthread_cond_destroy(&wake_cond);
-	return 0;
 }
 
 /*----------------------------------------------------------------------------*/
 static void wakeable_open(void) {
-	if (!wake_mutex || !wake_cond) {
+	if (!wake_initialized) {
+		wake_initialized = true;
 		pthread_mutex_init(&wake_mutex, 0);
 		pthread_cond_init(&wake_cond, 0);
 		atexit(wakeable_close);
