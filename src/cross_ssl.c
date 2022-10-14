@@ -235,7 +235,7 @@ SYMDECL(EVP_PKEY_derive_init, int, 1, EVP_PKEY_CTX *,ctx);
 SYMDECL(EVP_PKEY_derive_set_peer, int, 2, EVP_PKEY_CTX*, ctx, EVP_PKEY*, peer);
 SYMDECL(EVP_PKEY_derive, int, 3, EVP_PKEY_CTX*, ctx, unsigned char*, key, size_t*, keylen);
 
-bool cross_load_ssl(void) {
+bool cross_ssl_load(void) {
 	CRYPThandle = dlopen_try(LIBCRYPTO, RTLD_NOW);
 	SSLhandle = dlopen_try(LIBSSL, RTLD_NOW);
 
@@ -311,16 +311,16 @@ bool cross_load_ssl(void) {
 	return true;
 }
 
-void cross_free_ssl(void) {
+void cross_ssl_free(void) {
 	if (SSLhandle) dlclose(SSLhandle);
 	if (CRYPThandle) dlclose(CRYPThandle);
 }
 
 #else
-bool cross_load_ssl(void) {
+bool cross_ssl_load(void) {
 	return true;
 }
 
-void cross_free_ssl(void) {
+void cross_ssl_free(void) {
 }
 #endif
