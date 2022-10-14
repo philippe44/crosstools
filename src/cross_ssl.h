@@ -11,5 +11,5 @@
 
 #include <stdbool.h>
 
-bool	cross_load_ssl(void);
-void	cross_free_ssl(void);
+bool	cross_ssl_load(void);
+void	cross_ssl_free(void);
