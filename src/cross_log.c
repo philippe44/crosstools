@@ -2,7 +2,7 @@
  * Logging utilities
  *
  *  (c) Adrian Smith 2012-2015, triode1@btinternet.com
- *  (c) Philippe, philippe_44@outlook.com
+ *  Philippe, philippe_44@outlook.com
  *
  * See LICENSE
  * 

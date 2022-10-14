@@ -1,6 +1,10 @@
 /*
- *  (c) Philippe, philippe_44@outlook.com
+ * Various pthread-friendly utilities
+ * 
+ * (c) Philippe, philippe_44@outlook.com
  *
+ * See LICENSE
+ * 
  */
 
 #include <stdlib.h>

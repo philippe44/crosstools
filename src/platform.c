@@ -1,5 +1,5 @@
 /*
- * Cross-platforms functions
+ * Cross-platform functions
  * 
  * (c) Philippe, philippe_44@outlook.com: 
  *
