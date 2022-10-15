@@ -28,6 +28,7 @@ void 		netsock_close(void);
 
 void		set_nonblock(int sd);
 void		set_block(int sd);
+void		set_nosigpipe(int sd);
 int 		shutdown_socket(int sd);
 int 		bind_socket(struct in_addr host, short unsigned *port, int mode);
 bool		bind_host(int sd, struct in_addr host, unsigned short* port);

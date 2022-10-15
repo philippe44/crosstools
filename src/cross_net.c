@@ -448,24 +448,32 @@ int shutdown_socket(int sd) {
 }
 
 /*----------------------------------------------------------------------------*/
-void set_nonblock(int s) {
+void set_nonblock(int sd) {
 #if WIN
 	u_long iMode = 1;
-	ioctlsocket(s, FIONBIO, &iMode);
+	ioctlsocket(sd, FIONBIO, &iMode);
 #else
-	int flags = fcntl(s, F_GETFL, 0);
-	fcntl(s, F_SETFL, flags | O_NONBLOCK);
+	int flags = fcntl(sd, F_GETFL, 0);
+	fcntl(sd, F_SETFL, flags | O_NONBLOCK);
 #endif
 }
 
 /*----------------------------------------------------------------------------*/
-void set_block(int s) {
+void set_block(int sd) {
 #if WIN
 	u_long iMode = 0;
-	ioctlsocket(s, FIONBIO, &iMode);
+	ioctlsocket(sd, FIONBIO, &iMode);
 #else
-	int flags = fcntl(s, F_GETFL, 0);
-	fcntl(s, F_SETFL, flags & ~O_NONBLOCK);
+	int flags = fcntl(sd, F_GETFL, 0);
+	fcntl(sd, F_SETFL, flags & ~O_NONBLOCK);
+#endif
+}
+
+/*----------------------------------------------------------------------------*/
+void set_nosigpipe(int sd) {
+#if OSX
+	int set = 1;
+	setsockopt(s, SOL_SOCKET, SO_NOSIGPIPE, (void*)&set, sizeof(int));
 #endif
 }
 
