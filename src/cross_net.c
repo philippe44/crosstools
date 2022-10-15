@@ -556,8 +556,8 @@ int open_tcp_socket(struct in_addr host, unsigned short* port, bool blocking) {
 	/* socket creation */
 	sd = socket(AF_INET, SOCK_STREAM, 0);
 
-	if (blocking) set_nonblock(sd);
-	else set_block(sd);
+	if (blocking) set_block(sd);
+	else set_nonblock(sd);
 
 	if (sd < 0) {
 		LOG_ERROR("cannot create tcp socket %x", host);
