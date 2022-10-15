@@ -88,6 +88,13 @@ char* strtrim(char* s);
 int   strremovechar(char* str, char c);
 
 /*
+WWW tools
+*/
+char* url_encode(char* str);
+char* url_decode(char* str);
+char* xml_encode(char* src);
+
+/*
 Kitchen sink
 */
 uint32_t	gettime_ms(void);
