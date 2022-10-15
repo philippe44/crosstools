@@ -189,7 +189,7 @@ char* itoa(int value, char* str, int radix) {
 /*----------------------------------------------------------------------------*/
 void* dlopen(const char* filename, int flag) {
 	SetLastError(0);
-	return LoadLibrary((LPCTSTR)filename);
+	return LoadLibraryA(filename);
 }
 
 /*----------------------------------------------------------------------------*/
