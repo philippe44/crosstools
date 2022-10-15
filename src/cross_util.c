@@ -158,7 +158,6 @@ list_t* list_push(list_t *item, list_t **list) {
   return item;
 }
 
-
 /*---------------------------------------------------------------------------*/
 list_t* list_add_tail(list_t *item, list_t **list) {
   if (*list) {
@@ -173,7 +172,6 @@ list_t* list_add_tail(list_t *item, list_t **list) {
 
   return item;
 }
-
 
 /*---------------------------------------------------------------------------*/
 list_t* list_add_ordered(list_t *item, list_t **list, int (*compare)(void *a, void *b)) {
@@ -190,7 +188,6 @@ list_t* list_add_ordered(list_t *item, list_t **list, int (*compare)(void *a, vo
   return item;
 }
 
-
 /*---------------------------------------------------------------------------*/
 list_t* list_pop(list_t **list) {
   if (*list) {
@@ -199,7 +196,6 @@ list_t* list_pop(list_t **list) {
 	return item;
   } else return NULL;
 }
-
 
 /*---------------------------------------------------------------------------*/
 list_t* list_remove(list_t *item, list_t **list) {
@@ -212,7 +208,6 @@ list_t* list_remove(list_t *item, list_t **list) {
 
   return item;
 }
-
 
 /*---------------------------------------------------------------------------*/
 void list_clear(list_t **list, void (*free_func)(void *)) {
@@ -229,7 +224,7 @@ void list_clear(list_t **list, void (*free_func)(void *)) {
 
 /*----------------------------------------------------------------------------*/
 /* 																			  */
-/* Time & Clock															 	  */
+/* Time, Clock & System													 	  */
 /* 																			  */
 /*----------------------------------------------------------------------------*/
 
@@ -250,7 +245,6 @@ uint32_t gettime_ms(void) {
 #endif
 }
 
-
 /*----------------------------------------------------------------------------*/
 uint64_t gettime_ms64(void) {
 #if WIN
@@ -263,6 +257,18 @@ uint64_t gettime_ms64(void) {
 	return (uint64_t) (tv.tv_sec + 0x83AA7E80) * 1000 + tv.tv_usec / 1000;
 #endif
 }
+
+/*----------------------------------------------------------------------------*/
+void touch_memory(uint8_t* buf, size_t size) {
+#if LINUX || FREEBSD
+	u8_t* ptr;
+	for (ptr = buf; ptr < buf + size; ptr += sysconf(_SC_PAGESIZE)) {
+		*ptr = 0;
+	}
+#else
+#endif
+}
+
 
 
 /*----------------------------------------------------------------------------*/
@@ -403,7 +409,6 @@ bool kd_vadd(key_data_t *kd, char *key, char *fmt, ...) {
 	return false;
 }
 
-
 /*----------------------------------------------------------------------------*/
 void kd_free(key_data_t *kd) {
 	int i = 0;
@@ -415,7 +420,6 @@ void kd_free(key_data_t *kd) {
 
 	kd[0].key = NULL;
 }
-
 
 /*----------------------------------------------------------------------------*/
 char *kd_dump(key_data_t *kd) {
