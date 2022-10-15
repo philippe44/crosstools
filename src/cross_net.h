@@ -31,9 +31,10 @@ void		set_block(int sd);
 int 		shutdown_socket(int sd);
 int 		bind_socket(struct in_addr host, short unsigned *port, int mode);
 bool		bind_host(int sd, struct in_addr host, unsigned short* port);
-int 		conn_socket(unsigned short port);
-bool		get_tcp_connect(int sd, struct sockaddr_in peer);
-bool		get_tcp_connect_by_host(int sd, struct in_addr peer, unsigned short port);
+int 		tcp_connect_loopback(unsigned short port);
+bool		tcp_connect(int sd, struct sockaddr_in peer);
+bool		tcp_connect_by_host(int sd, struct in_addr peer, unsigned short port);
+int         tcp_connect_timeout(int sd, const struct sockaddr_in addr, int seconds);
 int			open_tcp_socket(struct in_addr host, unsigned short* port, bool blocking);
 int			open_udp_socket(struct in_addr host, unsigned short* port, bool blocking);
 

@@ -470,9 +470,9 @@ void set_block(int s) {
 }
 
 /*----------------------------------------------------------------------------*/
-bool get_tcp_connect(int sd, struct sockaddr_in peer) {
+bool tcp_connect(int sd, struct sockaddr_in peer) {
 	for (size_t count = 0; count < 2; count++) {
-		if (!connect(sd, (struct sockaddr*)&peer, sizeof(struct sockaddr))) {
+		if (connect(sd, (struct sockaddr*) &peer, sizeof(struct sockaddr)) < 0) {
 			return true;
 		}
 		usleep(100 * 1000);
@@ -483,14 +483,69 @@ bool get_tcp_connect(int sd, struct sockaddr_in peer) {
 }
 
 /*----------------------------------------------------------------------------*/
-bool get_tcp_connect_by_host(int sd, struct in_addr peer, unsigned short port) {
+bool tcp_connect_by_host(int sd, struct in_addr peer, unsigned short port) {
 	struct sockaddr_in addr;
 
 	addr.sin_family = AF_INET;
 	addr.sin_addr.s_addr = peer.s_addr;
 	addr.sin_port = htons(port);
 
-	return get_tcp_connect(sd, addr);
+	return tcp_connect(sd, addr);
+}
+
+/*----------------------------------------------------------------------------*/
+int tcp_connect_loopback(unsigned short port) {
+	struct sockaddr_in addr;
+	int sd;
+
+	sd = socket(AF_INET, SOCK_STREAM, 0);
+
+	addr.sin_family = AF_INET;
+	addr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
+	addr.sin_port = htons(port);
+
+	if (sd < 0 || connect(sd, (struct sockaddr*)&addr, sizeof(addr)) < 0) {
+		close(sd);
+		return -1;
+	}
+
+	LOG_DEBUG("created socket %d", sd);
+
+	return sd;
+}
+
+/*----------------------------------------------------------------------------*/
+// connect for socket already set to non blocking with timeout in ms
+int tcp_connect_timeout(int sd, const struct sockaddr_in addr, int seconds) {
+	fd_set w, e;
+	struct timeval tval;
+	socklen_t addrlen = sizeof(addr);
+
+	if (connect(sd, (struct sockaddr*) &addr, addrlen) < 0) {
+#if WIN
+		if (last_error() != WSAEWOULDBLOCK) {
+#else
+		if (last_error() != EINPROGRESS) {
+#endif
+			return -1;
+		}
+	}
+
+	FD_ZERO(&w);
+	FD_SET(sd, &w);
+	e = w;
+	tval.tv_sec = seconds / 1000;
+	tval.tv_usec = (seconds - tval.tv_sec * 1000) * 1000;
+
+	// only return 0 if w set and sock error is zero, otherwise return error code
+	if (select(sd + 1, NULL, &w, &e, seconds ? &tval : NULL) == 1 && FD_ISSET(sd, &w)) {
+		int	error = 0;
+		socklen_t len = sizeof(error);
+		getsockopt(sd, SOL_SOCKET, SO_ERROR, (void*)&error, &len);
+		return error;
+	}
+
+	return -1;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -500,7 +555,9 @@ int open_tcp_socket(struct in_addr host, unsigned short* port, bool blocking) {
 
 	/* socket creation */
 	sd = socket(AF_INET, SOCK_STREAM, 0);
-	if (!blocking) set_nonblock(sd);
+
+	if (blocking) set_nonblock(sd);
+	else set_block(sd);
 
 	if (sd < 0) {
 		LOG_ERROR("cannot create tcp socket %x", host);
@@ -591,26 +648,6 @@ bool bind_host(int sd, struct in_addr host, unsigned short* port) {
 	return true;
 }
 
-/*----------------------------------------------------------------------------*/
-int conn_socket(unsigned short port) {
-	struct sockaddr_in addr;
-	int sd;
-
-	sd = socket(AF_INET, SOCK_STREAM, 0);
-
-	addr.sin_family = AF_INET;
-	addr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
-	addr.sin_port = htons(port);
-
-	if (sd < 0 || connect(sd, (struct sockaddr *) &addr, sizeof(addr)) < 0) {
-		close(sd);
-		return -1;
-	}
-
-	LOG_DEBUG("created socket %d", sd);
-
-	return sd;
-}
 
 /*----------------------------------------------------------------------------*/
 /* 																			  */
