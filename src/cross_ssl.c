@@ -24,7 +24,7 @@
 #include <openssl/bio.h>
 #include <openssl/evp.h>
 
-#ifndef LINKALL
+#ifndef SSL_LIB_STATIC
 static void *SSLhandle = NULL;
 static void *CRYPThandle = NULL;
 #endif
@@ -49,7 +49,7 @@ static void *CRYPThandle = NULL;
 
 #define STR(x) #x
 
-#ifndef LINKALL
+#ifndef SSL_LIB_STATIC
 
 #define SYM(fn) dlsym_##fn
 #define SHIM(fn) shim_##fn
