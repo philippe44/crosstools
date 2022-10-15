@@ -240,7 +240,7 @@ bool cross_ssl_load(void) {
 	SSLhandle = dlopen_try(LIBSSL, RTLD_NOW);
 
 	if (!SSLhandle || !CRYPThandle) {
-		cross_free_ssl();
+		cross_ssl_free();
 		return false;
     }
 
