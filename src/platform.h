@@ -95,6 +95,11 @@ typedef SSIZE_T	ssize_t;
 
 #define fresize(f, s) chsize(fileno(f), s)
 
+void* dlopen(const char* filename, int flag);
+void  dlclose(void* handle);
+void  dlclose(void* handle);
+void* dlsym(void* handle, const char* symbol);
+
 int on_exit(void (*function)(int, void*), void* arg);
 
 typedef uint32_t in_addr_t;

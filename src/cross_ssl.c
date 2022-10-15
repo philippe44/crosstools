@@ -127,22 +127,6 @@ static char *LIBCRYPTO[] 	= {
 			"libcrypto.so.1.0.0", NULL };
 #endif
 
-#if WIN
-static void* dlopen(const char* filename, int flag) {
-	SetLastError(0);
-	return LoadLibraryA(filename);
-}
-
-static void dlclose(void* handle) {
-	FreeLibrary(handle);
-}
-
-static void* dlsym(void* handle, const char* symbol) {
-	SetLastError(0);
-	return (void*)GetProcAddress(handle, symbol);
-}
-#endif
-
 static void* dlopen_try(char** filenames, int flag) {
 	void* handle;
 	for (handle = NULL; !handle && *filenames; filenames++) handle = dlopen(*filenames, flag);
