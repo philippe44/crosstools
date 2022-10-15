@@ -261,7 +261,7 @@ uint64_t gettime_ms64(void) {
 /*----------------------------------------------------------------------------*/
 void touch_memory(uint8_t* buf, size_t size) {
 #if LINUX || FREEBSD
-	u8_t* ptr;
+	uint8_t* ptr;
 	for (ptr = buf; ptr < buf + size; ptr += sysconf(_SC_PAGESIZE)) {
 		*ptr = 0;
 	}
