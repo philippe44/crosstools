@@ -65,9 +65,6 @@
 #define min(a,b) (((a) < (b)) ? (a) : (b))
 #define max(a,b) (((a) > (b)) ? (a) : (b))
 
-#define last_error() errno
-#define ERROR_WOULDBLOCK EWOULDBLOCK
-
 // for now
 #define VALGRIND_MAKE_MEM_DEFINED(x,y)
 
@@ -87,6 +84,9 @@ char* itoa(int value, char* str, int radix);
 #include <iphlpapi.h>
 #include <sys/timeb.h>
 
+#define __attribute__(X)
+typedef SSIZE_T	ssize_t;
+
 #define usleep(x) Sleep((x)/1000)
 #define sleep(x) Sleep((x)*1000)
 
@@ -96,6 +96,9 @@ char* itoa(int value, char* str, int radix);
 #define fresize(f, s) chsize(fileno(f), s)
 
 int on_exit(void (*function)(int, void*), void* arg);
+
+typedef uint32_t in_addr_t;
+#define socklen_t int
 
 int poll(struct pollfd* fds, unsigned long numfds, int timeout);
 
@@ -109,14 +112,6 @@ char* strndup(const char* s, size_t n);
 
 #define VALGRIND_MAKE_MEM_DEFINED(x,y)
 
-#define __attribute__(X)
-typedef uint32_t in_addr_t;
-#define socklen_t int
-typedef SSIZE_T	ssize_t;
-
 #define RTLD_NOW 0
 
 #endif
-
-#define CROSS_VERSION 1
-bool cross_checkversion(int version);

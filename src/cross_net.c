@@ -459,6 +459,17 @@ void set_nonblock(int s) {
 }
 
 /*----------------------------------------------------------------------------*/
+void set_block(int s) {
+#if WIN
+	u_long iMode = 0;
+	ioctlsocket(s, FIONBIO, &iMode);
+#else
+	int flags = fcntl(s, F_GETFL, 0);
+	fcntl(s, F_SETFL, flags & ~O_NONBLOCK);
+#endif
+}
+
+/*----------------------------------------------------------------------------*/
 bool get_tcp_connect(int sd, struct sockaddr_in peer) {
 	for (size_t count = 0; count < 2; count++) {
 		if (!connect(sd, (struct sockaddr*)&peer, sizeof(struct sockaddr))) {
@@ -609,8 +620,21 @@ int conn_socket(unsigned short port) {
 
 /*----------------------------------------------------------------------------*/
 bool http_parse(int sock, char* method, char* resource, char* proto, key_data_t* rkd, char** body, int* len) {
-	char line[512], * dp;
-	unsigned j;
+	char* request = NULL;
+	bool res = http_parse_simple(sock, &request, rkd, body, len);
+
+	if (res && request) {
+		if (method) sscanf(request, "%s", method);
+		if (resource) sscanf(request, "%*s%s", resource);
+		if (proto) sscanf(request, "%*s%*s%s", proto);
+	}
+
+	return res;
+}
+
+/*----------------------------------------------------------------------------*/
+bool http_parse_simple(int sock, char **request, key_data_t* rkd, char** body, int* len) {
+	char line[1024];
 	int i, timeout = 100;
 
 	rkd[0].key = NULL;
@@ -622,29 +646,24 @@ bool http_parse(int sock, char* method, char* resource, char* proto, key_data_t*
 		return false;
 	}
 
-	if (!sscanf(line, "%s", method)) {
-		LOG_ERROR("missing method", NULL);
-		return false;
-	}
-
-	if (resource) sscanf(line, "%*s%s", resource);
-	if (proto) sscanf(line, "%*s%*s%s", proto);
+	if (request) *request = strdup(line);
 
 	i = *len = 0;
-
+		
 	while (http_read_line(sock, line, sizeof(line), timeout, true) > 0) {
 
 		LOG_DEBUG("sock: %u, received %s", sock, line);
 
 		// line folding should be deprecated
 		if (i && rkd[i].key && (line[0] == ' ' || line[0] == '\t')) {
+			unsigned j;
 			for (j = 0; j < strlen(line); j++) if (line[j] != ' ' && line[j] != '\t') break;
 			rkd[i].data = realloc(rkd[i].data, strlen(rkd[i].data) + strlen(line + j) + 1);
 			strcat(rkd[i].data, line + j);
 			continue;
 		}
 
-		dp = strstr(line, ":");
+		char* dp = strstr(line, ":");
 
 		if (!dp) {
 			LOG_ERROR("Request failed, bad header", NULL);
