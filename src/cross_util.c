@@ -246,15 +246,16 @@ uint32_t gettime_ms(void) {
 }
 
 /*----------------------------------------------------------------------------*/
-uint64_t gettime_ms64(void) {
+// this is EPOCH-based, so suitable for NTP
+uint64_t gettime_us(void) {
 #if WIN
 	FILETIME ft;
 	GetSystemTimeAsFileTime(&ft);
-	return (((uint64_t) ft.dwHighDateTime) << 32 | ft.dwLowDateTime) / 10000;
+	return ((uint64_t) tv.tv_sec + 0x83AA7E80) * 1000*1000 + tv.tv_usec;
 #else
 	struct timeval tv;
 	gettimeofday(&tv, NULL);
-	return (uint64_t) (tv.tv_sec + 0x83AA7E80) * 1000 + tv.tv_usec / 1000;
+	return (uint64_t) tv.tv_sec * 1000*1000 + tv.tv_usec;
 #endif
 }
 
