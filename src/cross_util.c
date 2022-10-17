@@ -251,7 +251,7 @@ uint64_t gettime_us(void) {
 #if WIN
 	FILETIME ft;
 	GetSystemTimeAsFileTime(&ft);
-	return ((uint64_t) tv.tv_sec + 0x83AA7E80) * 1000*1000 + tv.tv_usec;
+	return ((uint64_t)ft.dwLowDateTime + 0x83AA7E80) * 1000 * 1000 + ft.dwHighDateTime;
 #else
 	struct timeval tv;
 	gettimeofday(&tv, NULL);
