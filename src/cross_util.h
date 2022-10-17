@@ -98,6 +98,7 @@ char* xml_encode(char* src);
 Kitchen sink
 */
 uint32_t	gettime_ms(void);
+uint64_t	gettime_ms64(void);
 uint64_t 	gettime_us(void);
 uint32_t	hash32(char* str);
 int			hex2bytes(char* hex, uint8_t** bytes);

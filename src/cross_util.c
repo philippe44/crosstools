@@ -230,19 +230,12 @@ void list_clear(list_t **list, void (*free_func)(void *)) {
 
 /*----------------------------------------------------------------------------*/
 uint32_t gettime_ms(void) {
-#if WIN
-	return GetTickCount();
-#else
-#if LINUX || FREEBSD
-	struct timespec ts;
-	if (!clock_gettime(CLOCK_MONOTONIC, &ts)) {
-		return ts.tv_sec * 1000 + ts.tv_nsec / 1000000;
-	}
-#endif
-	struct timeval tv;
-	gettimeofday(&tv, NULL);
-	return tv.tv_sec * 1000 + tv.tv_usec / 1000;
-#endif
+	return gettime_us() / 1000;
+}
+
+/*----------------------------------------------------------------------------*/
+uint64_t gettime_ms64(void) {
+	return gettime_us() / 1000;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -251,7 +244,7 @@ uint64_t gettime_us(void) {
 #if WIN
 	FILETIME ft;
 	GetSystemTimeAsFileTime(&ft);
-	return ((uint64_t)ft.dwLowDateTime + 0x83AA7E80) * 1000 * 1000 + ft.dwHighDateTime;
+	return ((uint64_t) ft.dwHighDateTime << 32 | ft.dwLowDateTime) / 10 + 0x83AA7E80LL * 1000 * 1000;
 #else
 	struct timeval tv;
 	gettimeofday(&tv, NULL);
