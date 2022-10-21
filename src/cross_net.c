@@ -172,7 +172,6 @@ int SendARP(in_addr_t src, in_addr_t dst, uint8_t mac[], uint32_t * size) {
 }
 #elif OSX
 int SendARP(in_addr_t src, in_addr_t dst, uint8_t mac[], uint32_t* size) {
-{
 	int mib[6];
 	size_t needed;
 	char *lim, *buf, *next;
@@ -473,7 +472,7 @@ void set_block(int sd) {
 void set_nosigpipe(int sd) {
 #if OSX
 	int set = 1;
-	setsockopt(s, SOL_SOCKET, SO_NOSIGPIPE, (void*)&set, sizeof(int));
+	setsockopt(sd, SOL_SOCKET, SO_NOSIGPIPE, (void*)&set, sizeof(int));
 #endif
 }
 
@@ -787,7 +786,6 @@ int http_read_line(int fd, char* line, int maxlen, int timeout, bool polling) {
 	*line = 0;
 	return count;
 }
-
 
 /*----------------------------------------------------------------------------*/
 char* http_send(int sock, char* method, key_data_t* rkd) {
