@@ -72,8 +72,7 @@ void crossthreads_wake(void) {
 /*----------------------------------------------------------------------------*/
 
 /*----------------------------------------------------------------------------*/
-int pthread_cond_reltimedwait(pthread_cond_t *cond, pthread_mutex_t *mutex, uint32_t msWait)
-{
+int pthread_cond_reltimedwait(pthread_cond_t *cond, pthread_mutex_t *mutex, uint32_t msWait) {
 	struct timespec ts;
 	uint32_t	nsec;
 #if OSX || SUNOS
@@ -105,8 +104,7 @@ int pthread_cond_reltimedwait(pthread_cond_t *cond, pthread_mutex_t *mutex, uint
 
 // mutex wait with timeout
 #if LINUX || FREEBSD
-int _mutex_timedlock(pthread_mutex_t *m, uint32_t ms_wait)
-{
+int _mutex_timedlock(pthread_mutex_t *m, uint32_t ms_wait) {
 	int rc = -1;
 	struct timespec ts;
 
@@ -121,10 +119,9 @@ int _mutex_timedlock(pthread_mutex_t *m, uint32_t ms_wait)
 #endif
 
 #if OSX
-int _mutex_timedlock(pthread_mutex_t *m, uint32_t ms_wait)
-{
+int _mutex_timedlock(pthread_mutex_t *m, uint32_t ms_wait) {
 	int rc;
-	s32_t wait = (s32_t) ms_wait;
+	int32_t wait = (int32_t) ms_wait;
 
 	/* Try to acquire the lock and, if we fail, sleep for 10ms. */
 	while (((rc = pthread_mutex_trylock (m)) == EBUSY) && (wait > 0)) {
