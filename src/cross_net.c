@@ -21,29 +21,23 @@
 #include <net/if_arp.h>
 #include <netdb.h>
 #include <ctype.h>
+#include <ifaddrs.h>
 #if SUNOS
 #include <sys/sockio.h>
 #endif
 #if FREEBSD
-#include <ifaddrs.h>
 #include <net/if_dl.h>
 #include <net/if_types.h>
 #endif
-#endif
-
-#if WIN
-#include <iphlpapi.h>
-#elif OSX
-#include <sys/socket.h>
+#if OSX
 #include <sys/sysctl.h>
 #include <net/if_dl.h>
 #include <net/if_types.h>
 #include <net/route.h>
-#include <ifaddrs.h>
-#include <netdb.h>
-#include <netinet/in.h>
 #include <netinet/if_ether.h>
-#include <sys/time.h>
+#endif
+#elif WIN
+#include <iphlpapi.h>
 #endif
 
 #include "cross_net.h"
@@ -227,47 +221,59 @@ int SendARP(in_addr_t src, in_addr_t dst, uint8_t mac[], uint32_t * size) {
 #endif
 
 /*---------------------------------------------------------------------------*/
-bool get_interface(struct in_addr *addr) {
-#if LINUX || OSX || BSD || SUNOS
-	bool valid = false;
-	struct ifaddrs* ifaddr;
+struct in_addr get_interface(char* iface) {
+	struct in_addr addr;
 
-	if (getifaddrs(&ifaddr) == -1) 	return false;
+	// try to get the address from the parameter
+	addr.s_addr = iface && *iface ? inet_addr(iface) : INADDR_NONE;
 
-	for (struct ifaddrs* ifa = ifaddr; ifa != NULL && !valid; ifa = ifa->ifa_next) {
-		if (ifa->ifa_addr == NULL || ifa->ifa_addr->sa_family != AF_INET ||
-			!(ifa->ifa_flags & IFF_UP) || !(ifa->ifa_flags & IFF_MULTICAST) ||
-			ifa->ifa_flags & IFF_LOOPBACK)
-			continue;
-
-		*addr = ((struct sockaddr_in*)ifa->ifa_addr)->sin_addr;
-		valid = true;
-		break;
-	}
-
-	freeifaddrs(ifaddr);
-	return valid;
-#elif WIN
+	// if we already are given an address; just use it
+	if (addr.s_addr != INADDR_NONE)  return addr;
+#if WIN
 	struct sockaddr_in* host = NULL;
 	ULONG size = sizeof(IP_ADAPTER_ADDRESSES) * 32;
+
+	// otherwise we need to loop and find somethign that works
 	IP_ADAPTER_ADDRESSES* adapters = (IP_ADAPTER_ADDRESSES*)malloc(size);
 	int ret = GetAdaptersAddresses(AF_UNSPEC, GAA_FLAG_INCLUDE_GATEWAYS | GAA_FLAG_SKIP_MULTICAST | GAA_FLAG_SKIP_ANYCAST, 0, adapters, &size);
 
-	for (PIP_ADAPTER_ADDRESSES adapter = adapters; adapter && !host; adapter = adapter->Next) {
-		if (adapter->TunnelType == TUNNEL_TYPE_TEREDO) continue;
-		if (adapter->OperStatus != IfOperStatusUp) continue;
+	for (PIP_ADAPTER_ADDRESSES adapter = adapters; adapter; adapter = adapter->Next) {
+		if (adapter->TunnelType == TUNNEL_TYPE_TEREDO ||
+			adapter->OperStatus != IfOperStatusUp || 0)
+			continue;
+
+		char name[256];
+		wcstombs(name, adapter->FriendlyName, sizeof(name));
+		if (iface && *iface && strcasecmp(iface, name)) continue;
 
 		for (IP_ADAPTER_UNICAST_ADDRESS* unicast = adapter->FirstUnicastAddress; unicast;
 			unicast = unicast->Next) {
 			if (adapter->FirstGatewayAddress && unicast->Address.lpSockaddr->sa_family == AF_INET) {
-				*addr = ((struct sockaddr_in*)unicast->Address.lpSockaddr)->sin_addr;
-				return true;
+				addr = ((struct sockaddr_in*)unicast->Address.lpSockaddr)->sin_addr;
+				return addr;
 			}
 		}
 	}
 
-	addr->S_un.S_addr = INADDR_ANY;
-	return false;
+	return addr;
+#else
+	struct ifaddrs* ifaddr;
+
+	if (getifaddrs(&ifaddr) == -1) 	return addr;
+
+	for (struct ifaddrs* ifa = ifaddr; ifa != NULL; ifa = ifa->ifa_next) {
+		if (ifa->ifa_addr == NULL || ifa->ifa_addr->sa_family != AF_INET ||
+			!(ifa->ifa_flags & IFF_UP) || !(ifa->ifa_flags & IFF_MULTICAST) ||
+			ifa->ifa_flags & IFF_LOOPBACK ||
+			(iface && *iface && strcasecmp(iface, ifa->ifa_name)))
+			continue;
+
+		addr = ((struct sockaddr_in*)ifa->ifa_addr)->sin_addr;
+		break;
+	}
+
+	freeifaddrs(ifaddr);
+		return addr;
 #endif
 }
 
