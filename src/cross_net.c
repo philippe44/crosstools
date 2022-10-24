@@ -226,42 +226,28 @@ int SendARP(in_addr_t src, in_addr_t dst, uint8_t mac[], uint32_t * size) {
 }
 #endif
 
-#if LINUX || OSX || BSD || SUNOS
+/*---------------------------------------------------------------------------*/
 bool get_interface(struct in_addr *addr) {
-	struct ifreq *ifreq;
-	struct ifconf ifconf;
-	char buf[512];
-	unsigned i, nb;
-	int fd;
+#if LINUX || OSX || BSD || SUNOS
 	bool valid = false;
+	struct ifaddrs* ifaddr;
 
-	fd = socket(AF_INET, SOCK_DGRAM, 0);
+	if (getifaddrs(&ifaddr) == -1) 	return false;
 
-	ifconf.ifc_len = sizeof(buf);
-	ifconf.ifc_buf = buf;
+	for (struct ifaddrs* ifa = ifaddr; ifa != NULL && !valid; ifa = ifa->ifa_next) {
+		if (ifa->ifa_addr == NULL || ifa->ifa_addr->sa_family != AF_INET ||
+			!(ifa->ifa_flags & IFF_UP) || !(ifa->ifa_flags & IFF_MULTICAST) ||
+			ifa->ifa_flags & IFF_LOOPBACK)
+			continue;
 
-	if (ioctl(fd, SIOCGIFCONF, &ifconf)!=0) return false;
-
-	ifreq = ifconf.ifc_req;
-	nb = ifconf.ifc_len / sizeof(struct ifreq);
-
-	for (i = 0; i < nb; i++) {
-		ioctl(fd, SIOCGIFFLAGS, &ifreq[i]);
-		//!(ifreq[i].ifr_flags & IFF_POINTTOPOINT);
-		if ((ifreq[i].ifr_flags & IFF_UP) &&
-			!(ifreq[i].ifr_flags & IFF_LOOPBACK) &&
-			ifreq[i].ifr_flags & IFF_MULTICAST) {
-				*addr = ((struct sockaddr_in *) &(ifreq[i].ifr_addr))->sin_addr;
-				valid = true;
-				break;
-		 }
+		*addr = ((struct sockaddr_in*)ifa->ifa_addr)->sin_addr;
+		valid = true;
+		break;
 	}
 
-	close(fd);
+	freeifaddrs(ifaddr);
 	return valid;
-}
 #elif WIN
-bool get_interface(struct in_addr* addr) {
 	struct sockaddr_in* host = NULL;
 	ULONG size = sizeof(IP_ADAPTER_ADDRESSES) * 32;
 	IP_ADAPTER_ADDRESSES* adapters = (IP_ADAPTER_ADDRESSES*)malloc(size);
@@ -282,8 +268,8 @@ bool get_interface(struct in_addr* addr) {
 
 	addr->S_un.S_addr = INADDR_ANY;
 	return false;
-}
 #endif
+}
 
 /*---------------------------------------------------------------------------*/
 #define MAX_INTERFACES 256
