@@ -90,7 +90,7 @@ int vasprintf(char** strp, const char* fmt, va_list args)
 }
 #endif
 
-#if LINUX || OSX || FREEBSD || SUNOS
+#if !WIN
 /*---------------------------------------------------------------------------*/
 char* strlwr(char* str)
 {
@@ -222,7 +222,7 @@ int on_exit(void (*function)(int, void*), void* arg) {
 #endif
 
 /*----------------------------------------------------------------------------*/
-#if LINUX || FREEBSD || OSX
+#if !WIN
 char* GetTempPath(uint16_t size, char* path)
 {
 	strncpy(path, P_tmpdir, size);

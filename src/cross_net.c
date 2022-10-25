@@ -25,7 +25,7 @@
 #if SUNOS
 #include <sys/sockio.h>
 #endif
-#if FREEBSD
+#if FREEBSD || SUNOS
 #include <net/if_dl.h>
 #include <net/if_types.h>
 #endif
@@ -69,7 +69,7 @@ void get_mac(uint8_t mac[]) {
 	struct ifreq ifreq;
 	struct ifreq ifs[4];
 
-	mac[0] = mac[1] = mac[2] = mac[3] = mac[4] = mac[5] = 0;
+	memset(mac, 0, 6);
 
 	int s = socket(AF_INET, SOCK_DGRAM, 0);
 
@@ -95,13 +95,13 @@ void get_mac(uint8_t mac[]) {
 
 	close(s);
 }
-#elif OSX || FREEBSD
+#elif OSX || FREEBSD || SUNOS
 void get_mac(uint8_t mac[]) {
 	struct ifaddrs *addrs, *ptr;
 	const struct sockaddr_dl *dlAddr;
 	const unsigned char *base;
 
-	mac[0] = mac[1] = mac[2] = mac[3] = mac[4] = mac[5] = 0;
+	memset(mac, 0, 6);
 
 	if (getifaddrs(&addrs) == 0) {
 		ptr = addrs;
@@ -124,15 +124,13 @@ void get_mac(uint8_t mac[]) {
 	DWORD dwBufLen = sizeof(AdapterInfo);
 	DWORD dwStatus = GetAdaptersInfo(AdapterInfo, &dwBufLen);
 
-	mac[0] = mac[1] = mac[2] = mac[3] = mac[4] = mac[5] = 0;
+	memset(mac, 0, 6);
 
 	if (GetAdaptersInfo(AdapterInfo, &dwBufLen) == ERROR_SUCCESS) {
 		memcpy(mac, AdapterInfo[0].Address, 6);
 	}
 }
 #endif
-
-
 
 /*----------------------------------------------------------------------------*/
 #if LINUX

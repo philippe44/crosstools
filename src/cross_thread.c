@@ -103,7 +103,7 @@ int pthread_cond_reltimedwait(pthread_cond_t *cond, pthread_mutex_t *mutex, uint
 }
 
 // mutex wait with timeout
-#if LINUX || FREEBSD
+#if LINUX || FREEBSD || SUNOS
 int _mutex_timedlock(pthread_mutex_t *m, uint32_t ms_wait) {
 	int rc = -1;
 	struct timespec ts;
