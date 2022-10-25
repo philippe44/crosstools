@@ -37,31 +37,31 @@ typedef struct {
 	void* mutex;
 #endif
 	void (*cleanup)(void*);
-	struct _queue_s {
-		struct _queue_s* next;
+	struct _cross_queue_s {
+		struct _cross_queue_s* next;
 		void* item;
 	} list;
-} queue_t;
+} cross_queue_t;
 
-void	queue_init(queue_t *queue, bool mutex, void (*f)(void*));
-void	queue_insert(queue_t *queue, void *item);
-void*	queue_extract(queue_t *queue);
-void	queue_flush(queue_t *queue);
-void	queue_free_item(queue_t* queue, void* item);
+void	queue_init(cross_queue_t *queue, bool mutex, void (*f)(void*));
+void	queue_insert(cross_queue_t *queue, void *item);
+void*	queue_extract(cross_queue_t *queue);
+void	queue_flush(cross_queue_t *queue);
+void	queue_free_item(cross_queue_t* queue, void* item);
 
 /*
 Linked lists
 */
-typedef struct list_s {
-	struct list_s* next;
-} list_t;
+typedef struct cross_list_s {
+	struct cross_list_s* next;
+} cross_list_t;
 
-list_t*		list_push(list_t *item, list_t **list);
-list_t*		list_add_tail(list_t *item, list_t **list);
-list_t*		list_add_ordered(list_t *item, list_t **list, int (*compare)(void *a, void *b));
-list_t*		list_pop(list_t **list);
-list_t*   	list_remove(list_t *item, list_t **list);
-void 		list_clear(list_t **list, void (*free_func)(void *));
+cross_list_t*	list_push(cross_list_t *item, cross_list_t **list);
+cross_list_t*	list_add_tail(cross_list_t *item, cross_list_t **list);
+cross_list_t*	list_add_ordered(cross_list_t *item, cross_list_t **list, int (*compare)(void *a, void *b));
+cross_list_t*	list_pop(cross_list_t **list);
+cross_list_t*   list_remove(cross_list_t *item, cross_list_t **list);
+void 			list_clear(cross_list_t **list, void (*free_func)(void *));
 
 /* 
 Key-Value tools

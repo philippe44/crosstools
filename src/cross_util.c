@@ -53,7 +53,7 @@ static __attribute__((unused)) log_level *loglevel = &util_loglevel;
 /* 																			  */
 /*----------------------------------------------------------------------------*/
 /*----------------------------------------------------------------------------*/
-void queue_init(queue_t *queue, bool mutex, void (*cleanup)(void*)) {
+void queue_init(cross_queue_t *queue, bool mutex, void (*cleanup)(void*)) {
 	queue->cleanup = cleanup;
 	queue->list.item = NULL;
 	queue->mutex = NULL;
@@ -69,15 +69,15 @@ void queue_init(queue_t *queue, bool mutex, void (*cleanup)(void*)) {
 }
 
 /*----------------------------------------------------------------------------*/
-void queue_insert(queue_t *queue, void *item) {
-	struct _queue_s *list;
+void queue_insert(cross_queue_t *queue, void *item) {
+	struct _cross_queue_s *list;
 
 	if (queue->mutex) mutex_lock(queue->mutex);
 	list = &queue->list;
 
 	while (list->item) list = list->next;
 	list->item = item;
-	list->next = malloc(sizeof(struct _queue_s));
+	list->next = malloc(sizeof(struct _cross_queue_s));
 	list->next->item = NULL;
 
 	if (queue->mutex) mutex_unlock(queue->mutex);
@@ -85,16 +85,16 @@ void queue_insert(queue_t *queue, void *item) {
 
 
 /*----------------------------------------------------------------------------*/
-void *queue_extract(queue_t *queue) {
+void *queue_extract(cross_queue_t *queue) {
 	void *item;
-	struct _queue_s *list;
+	struct _cross_queue_s *list;
 
 	if (queue->mutex) mutex_lock(queue->mutex);
 	list = &queue->list;
 	item = list->item;
 
 	if (item) {
-		struct _queue_s *next = list->next;
+		struct _cross_queue_s *next = list->next;
 		if (next->item) {
 			list->item = next->item;
 			list->next = next->next;
@@ -109,15 +109,15 @@ void *queue_extract(queue_t *queue) {
 
 
 /*----------------------------------------------------------------------------*/
-void queue_flush(queue_t *queue) {
-	struct _queue_s *list;
+void queue_flush(cross_queue_t *queue) {
+	struct _cross_queue_s *list;
 
 	if (queue->mutex) mutex_lock(queue->mutex);
 
 	list = &queue->list;
 
 	while (list->item) {
-		struct _queue_s *next = list->next;
+		struct _cross_queue_s *next = list->next;
 		if (queue->cleanup)	(*(queue->cleanup))(list->item);
 		if (list != &queue->list) { NFREE(list); }
 		list = next;
@@ -138,7 +138,7 @@ void queue_flush(queue_t *queue) {
 }
 
 /*----------------------------------------------------------------------------*/
-void queue_free_item(queue_t* queue, void* item) {
+void queue_free_item(cross_queue_t* queue, void* item) {
 	if (queue->cleanup)	(*(queue->cleanup))(item);
 }
 
@@ -149,7 +149,7 @@ void queue_free_item(queue_t* queue, void* item) {
 /*----------------------------------------------------------------------------*/
 
 /*---------------------------------------------------------------------------*/
-list_t* list_push(list_t *item, list_t **list) {
+cross_list_t* list_push(cross_list_t *item, cross_list_t **list) {
   if (*list) item->next = *list;
   else item->next = NULL;
 
@@ -159,9 +159,9 @@ list_t* list_push(list_t *item, list_t **list) {
 }
 
 /*---------------------------------------------------------------------------*/
-list_t* list_add_tail(list_t *item, list_t **list) {
+cross_list_t* list_add_tail(cross_list_t *item, cross_list_t **list) {
   if (*list) {
-	struct list_s *p = *list;
+	struct cross_list_s *p = *list;
 	while (p->next) p = p->next;
 	item->next = p->next;
 	p->next = item;
@@ -174,9 +174,9 @@ list_t* list_add_tail(list_t *item, list_t **list) {
 }
 
 /*---------------------------------------------------------------------------*/
-list_t* list_add_ordered(list_t *item, list_t **list, int (*compare)(void *a, void *b)) {
+cross_list_t* list_add_ordered(cross_list_t *item, cross_list_t **list, int (*compare)(void *a, void *b)) {
   if (*list) {
-	struct list_s *p = *list;
+	struct cross_list_s *p = *list;
 	while (p->next && compare(p->next, item) <= 0) p = p->next;
 	item->next = p->next;
 	p->next = item;
@@ -189,18 +189,18 @@ list_t* list_add_ordered(list_t *item, list_t **list, int (*compare)(void *a, vo
 }
 
 /*---------------------------------------------------------------------------*/
-list_t* list_pop(list_t **list) {
+cross_list_t* list_pop(cross_list_t **list) {
   if (*list) {
-	list_t *item = *list;
+	cross_list_t *item = *list;
 	*list = item->next;
 	return item;
   } else return NULL;
 }
 
 /*---------------------------------------------------------------------------*/
-list_t* list_remove(list_t *item, list_t **list) {
+cross_list_t* list_remove(cross_list_t *item, cross_list_t **list) {
   if (item != *list) {
-	struct list_s *p = *list;
+	struct cross_list_s *p = *list;
 	while (p && p->next != item) p = p->next;
 	if (p) p->next = item->next;
 	item->next = NULL;
@@ -210,10 +210,10 @@ list_t* list_remove(list_t *item, list_t **list) {
 }
 
 /*---------------------------------------------------------------------------*/
-void list_clear(list_t **list, void (*free_func)(void *)) {
+void list_clear(cross_list_t **list, void (*free_func)(void *)) {
   if (!*list) return;
   while (*list) {
-	struct list_s *next = (*list)->next;
+	struct cross_list_s *next = (*list)->next;
 	if (free_func) (*free_func)(*list);
 	else free(*list);
 	*list = next;
