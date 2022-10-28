@@ -9,7 +9,7 @@
 
 #pragma once
 
-#if defined(linux)
+#if defined(__linux__)
 #define LINUX     1
 #define OSX       0
 #define WIN       0

@@ -331,7 +331,7 @@ in_addr_t get_localhost(char **name) {
 	freeifaddrs(ifap);
 
 	return INADDR_ANY;
-#elif defined(linux) || defined(sun)
+#elif defined(__linux__) || defined(sun)
 	char szBuffer[MAX_INTERFACES * sizeof (struct ifreq)];
 	struct ifconf ifConf;
 	struct ifreq ifReq;
