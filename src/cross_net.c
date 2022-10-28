@@ -22,10 +22,10 @@
 #include <netdb.h>
 #include <ctype.h>
 #include <ifaddrs.h>
+#if FREEBSD || SUNOS
 #if SUNOS
 #include <sys/sockio.h>
 #endif
-#if FREEBSD || SUNOS
 #include <net/if_dl.h>
 #include <net/if_types.h>
 #endif
