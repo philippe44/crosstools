@@ -109,12 +109,8 @@ static char *LIBCRYPTO[] = {
 			"libeay32.dll", NULL };
 #elif OSX
 static char *LIBSSL[] = {
-			"libssl.1.1.1.dylib",
-			"libssl.1.1.0.dylib",
 			"libssl.dylib", NULL };
 static char *LIBCRYPTO[] 	= {
-			"libcrypto.1.1.1.dylib",
-			"libcrypto.1.1.0.dylib",
 			"libcrypto.dylib", NULL };
 #else
 static char *LIBSSL[] 		= {
