@@ -117,6 +117,7 @@ static char *LIBSSL[] 		= {
 			"libssl.so",
 			"libssl.so.1.1.1",
 			"libssl.so.1.1.0",
+			"libssl.so.1.1",
 			"libssl.so.1.0.2",
 			"libssl.so.1.0.1",
 			"libssl.so.1.0.0", NULL };
@@ -124,6 +125,7 @@ static char *LIBCRYPTO[] 	= {
 			"libcrypto.so",
 			"libcrypto.so.1.1.1",
 			"libcrypto.so.1.1.0",
+			"libcrypto.so.1.1",
 			"libcrypto.so.1.0.2",
 			"libcrypto.so.1.0.1",
 			"libcrypto.so.1.0.0", NULL };
