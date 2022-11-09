@@ -50,6 +50,19 @@ void logprint(const char *fmt, ...) {
 }
 
 /*---------------------------------------------------------------------------*/
+void logdump(const char* data, size_t size) {
+	size_t count = 0;
+	while (size) {
+		size_t col = size > 16 ? 16 : size;
+		fprintf(stderr, "%04x  ", count);
+		for (size_t i = 0; i < col; i++) fprintf(stderr, "%02x ", (unsigned char) data[i]);
+		for (size_t i = 0; i < col; i++) isprint(data[i]) ? putc(data[i], stderr) : putc(' ', stderr);
+		putc('\n', stderr);
+		data += col; size -= col; count += col;
+	}
+}
+
+/*---------------------------------------------------------------------------*/
 log_level debug2level(char *level)
 {
 	if (!strcmp(level, "error")) return lERROR;

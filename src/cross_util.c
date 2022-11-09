@@ -83,6 +83,20 @@ void queue_insert(cross_queue_t *queue, void *item) {
 	if (queue->mutex) mutex_unlock(queue->mutex);
 }
 
+/*----------------------------------------------------------------------------*/
+void queue_insert_first(cross_queue_t* queue, void* item) {
+	struct _cross_queue_s* next;
+
+	if (queue->mutex) mutex_lock(queue->mutex);
+
+	next = malloc(sizeof(struct _cross_queue_s));
+	memcpy(next, &queue->list, sizeof(struct _cross_queue_s));
+	queue->list.item = item;
+	queue->list.next = next;
+
+	if (queue->mutex) mutex_unlock(queue->mutex);
+}
+
 
 /*----------------------------------------------------------------------------*/
 void *queue_extract(cross_queue_t *queue) {
