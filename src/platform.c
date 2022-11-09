@@ -66,8 +66,7 @@ int poll(struct pollfd *fds, unsigned long numfds, int timeout) {
 
 #if WIN
 /*----------------------------------------------------------------------------*/
-int asprintf(char** strp, const char* fmt, ...)
-{
+int asprintf(char** strp, const char* fmt, ...) {
 	va_list args;
 
 	va_start(args, fmt);
@@ -78,8 +77,7 @@ int asprintf(char** strp, const char* fmt, ...)
 }
 
 /*----------------------------------------------------------------------------*/
-int vasprintf(char** strp, const char* fmt, va_list args)
-{
+int vasprintf(char** strp, const char* fmt, va_list args) {
 	int len = vsnprintf(NULL, 0, fmt, args);
 	*strp = malloc(len + 1);
 
@@ -92,8 +90,7 @@ int vasprintf(char** strp, const char* fmt, va_list args)
 
 #if !WIN
 /*---------------------------------------------------------------------------*/
-char* strlwr(char* str)
-{
+char* strlwr(char* str) {
 	char* p = str;
 	while (*p) {
 		*p = tolower(*p);
@@ -105,8 +102,7 @@ char* strlwr(char* str)
 
 #if WIN
 /*---------------------------------------------------------------------------*/
-char* strcasestr(const char* haystack, const char* needle)
-{
+char* strcasestr(const char* haystack, const char* needle) {
 	char* haystack_lwr, * needle_lwr, * p;
 
 	haystack_lwr = strlwr(strdup(haystack));
@@ -120,8 +116,7 @@ char* strcasestr(const char* haystack, const char* needle)
 }
 
 /*---------------------------------------------------------------------------*/
-char* strsep(char** stringp, const char* delim)
-{
+char* strsep(char** stringp, const char* delim) {
 	char* start = *stringp;
 	char* p;
 
@@ -223,8 +218,7 @@ int on_exit(void (*function)(int, void*), void* arg) {
 
 /*----------------------------------------------------------------------------*/
 #if !WIN
-char* GetTempPath(uint16_t size, char* path)
-{
+char* GetTempPath(uint16_t size, char* path) {
 	strncpy(path, P_tmpdir, size);
 	if (!strlen(path)) strncpy(path, "/var/tmp", size);
 	path[size - 1] = '\0';
