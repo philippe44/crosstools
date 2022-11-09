@@ -513,7 +513,7 @@ int tcp_connect_loopback(unsigned short port) {
 
 /*----------------------------------------------------------------------------*/
 // connect for socket already set to non blocking with timeout in ms
-int tcp_connect_timeout(int sd, const struct sockaddr_in addr, int seconds) {
+int tcp_connect_timeout(int sd, const struct sockaddr_in addr, int ms) {
 	fd_set w, e;
 	struct timeval tval;
 	socklen_t addrlen = sizeof(addr);
