@@ -531,11 +531,11 @@ int tcp_connect_timeout(int sd, const struct sockaddr_in addr, int ms) {
 	FD_ZERO(&w);
 	FD_SET(sd, &w);
 	e = w;
-	tval.tv_sec = seconds / 1000;
-	tval.tv_usec = (seconds - tval.tv_sec * 1000) * 1000;
+	tval.tv_sec = ms / 1000;
+	tval.tv_usec = (ms - tval.tv_sec * 1000) * 1000;
 
 	// only return 0 if w set and sock error is zero, otherwise return error code
-	if (select(sd + 1, NULL, &w, &e, seconds ? &tval : NULL) == 1 && FD_ISSET(sd, &w)) {
+	if (select(sd + 1, NULL, &w, &e, ms ? &tval : NULL) == 1 && FD_ISSET(sd, &w)) {
 		int	error = 0;
 		socklen_t len = sizeof(error);
 		getsockopt(sd, SOL_SOCKET, SO_ERROR, (void*)&error, &len);
