@@ -52,6 +52,7 @@ static __attribute__((unused)) log_level *loglevel = &util_loglevel;
 /* Queue management															  */
 /* 																			  */
 /*----------------------------------------------------------------------------*/
+
 /*----------------------------------------------------------------------------*/
 void queue_init(cross_queue_t *queue, bool mutex, void (*cleanup)(void*)) {
 	queue->cleanup = cleanup;
