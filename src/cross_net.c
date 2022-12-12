@@ -228,14 +228,13 @@ struct in_addr get_interface(char* iface) {
 	// if we already are given an address; just use it
 	if (addr.s_addr != INADDR_NONE)  return addr;
 #if WIN
-	struct sockaddr_in* host = NULL;
 	ULONG size = sizeof(IP_ADAPTER_ADDRESSES) * 64;
 
 	// otherwise we need to loop and find somethign that works
 	IP_ADAPTER_ADDRESSES* adapters = (IP_ADAPTER_ADDRESSES*)malloc(size);
 	int ret = GetAdaptersAddresses(AF_UNSPEC, GAA_FLAG_INCLUDE_GATEWAYS | GAA_FLAG_SKIP_MULTICAST | GAA_FLAG_SKIP_ANYCAST, 0, adapters, &size);
 
-	for (PIP_ADAPTER_ADDRESSES adapter = adapters; ret == ERROR_SUCCESS && adapter; adapter = adapter->Next) {
+	for (PIP_ADAPTER_ADDRESSES adapter = adapters; ret == ERROR_SUCCESS && adapter && addr.s_addr == INADDR_NONE; adapter = adapter->Next) {
 		if (adapter->TunnelType == TUNNEL_TYPE_TEREDO ||
 			adapter->OperStatus != IfOperStatusUp || 0)
 			continue;
@@ -248,11 +247,12 @@ struct in_addr get_interface(char* iface) {
 			unicast = unicast->Next) {
 			if (adapter->FirstGatewayAddress && unicast->Address.lpSockaddr->sa_family == AF_INET) {
 				addr = ((struct sockaddr_in*)unicast->Address.lpSockaddr)->sin_addr;
-				return addr;
+				break;
 			}
 		}
 	}
 
+	free(adapters);
 	return addr;
 #else
 	struct ifaddrs* ifaddr;
@@ -271,7 +271,7 @@ struct in_addr get_interface(char* iface) {
 	}
 
 	freeifaddrs(ifaddr);
-		return addr;
+	return addr;
 #endif
 }
 
