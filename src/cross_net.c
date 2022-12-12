@@ -219,7 +219,7 @@ int SendARP(in_addr_t src, in_addr_t dst, uint8_t mac[], uint32_t * size) {
 #endif
 
 /*---------------------------------------------------------------------------*/
-struct in_addr get_interface(char* iface) {
+struct in_addr get_interface(char* iface, uint32_t *mask) {
 	struct in_addr addr;
 
 	// try to get the address from the parameter
@@ -247,6 +247,7 @@ struct in_addr get_interface(char* iface) {
 			unicast = unicast->Next) {
 			if (adapter->FirstGatewayAddress && unicast->Address.lpSockaddr->sa_family == AF_INET) {
 				addr = ((struct sockaddr_in*)unicast->Address.lpSockaddr)->sin_addr;
+				if (mask) *mask = (0xffffffff >> (32 - unicast->OnLinkPrefixLength)) << (32 - unicast->OnLinkPrefixLength);
 				break;
 			}
 		}
@@ -267,6 +268,7 @@ struct in_addr get_interface(char* iface) {
 			continue;
 
 		addr = ((struct sockaddr_in*)ifa->ifa_addr)->sin_addr;
+		if (mask) *mask = ((struct sockaddr_in*)ifa->ifa_netmask)->sin_addr.s_addr;
 		break;
 	}
 
