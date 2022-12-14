@@ -219,37 +219,49 @@ int SendARP(in_addr_t src, in_addr_t dst, uint8_t mac[], uint32_t * size) {
 #endif
 
 /*---------------------------------------------------------------------------*/
-struct in_addr get_interface(char* iface, uint32_t *mask) {
+struct in_addr get_interface(char* in, char **iface, uint32_t *mask) {
 	struct in_addr addr;
 
 	// try to get the address from the parameter
-	addr.s_addr = iface && *iface ? inet_addr(iface) : INADDR_NONE;
+	addr.s_addr = in && *in ? inet_addr(in) : INADDR_NONE;
 
-	// if we already are given an address; just use it
-	if (addr.s_addr != INADDR_NONE)  return addr;
 #if WIN
+	bool done = false;
 	ULONG size = sizeof(IP_ADAPTER_ADDRESSES) * 64;
 
 	// otherwise we need to loop and find somethign that works
 	IP_ADAPTER_ADDRESSES* adapters = (IP_ADAPTER_ADDRESSES*)malloc(size);
 	int ret = GetAdaptersAddresses(AF_UNSPEC, GAA_FLAG_INCLUDE_GATEWAYS | GAA_FLAG_SKIP_MULTICAST | GAA_FLAG_SKIP_ANYCAST, 0, adapters, &size);
 
-	for (PIP_ADAPTER_ADDRESSES adapter = adapters; ret == ERROR_SUCCESS && adapter && addr.s_addr == INADDR_NONE; adapter = adapter->Next) {
-		if (adapter->TunnelType == TUNNEL_TYPE_TEREDO ||
-			adapter->OperStatus != IfOperStatusUp || 0)
-			continue;
+	for (PIP_ADAPTER_ADDRESSES adapter = adapters; ret == ERROR_SUCCESS && adapter && !done; adapter = adapter->Next) {
+		if (adapter->TunnelType == TUNNEL_TYPE_TEREDO || adapter->OperStatus != IfOperStatusUp)	continue;
 
 		char name[256];
 		wcstombs(name, adapter->FriendlyName, sizeof(name));
-		if (iface && *iface && strcasecmp(iface, name)) continue;
 
-		for (IP_ADAPTER_UNICAST_ADDRESS* unicast = adapter->FirstUnicastAddress; unicast;
-			unicast = unicast->Next) {
-			if (adapter->FirstGatewayAddress && unicast->Address.lpSockaddr->sa_family == AF_INET) {
-				addr = ((struct sockaddr_in*)unicast->Address.lpSockaddr)->sin_addr;
-				if (mask) *mask = (0xffffffff >> (32 - unicast->OnLinkPrefixLength)) << (32 - unicast->OnLinkPrefixLength);
-				break;
+		// we are looking for an addr from an iface
+		if (addr.s_addr == INADDR_NONE) {
+			if (in && *in && strcasecmp(in, name)) continue;
+
+			for (IP_ADAPTER_UNICAST_ADDRESS* unicast = adapter->FirstUnicastAddress; unicast && !done; unicast = unicast->Next) {
+				if (adapter->FirstGatewayAddress && unicast->Address.lpSockaddr->sa_family == AF_INET) {
+					addr = ((struct sockaddr_in*)unicast->Address.lpSockaddr)->sin_addr;
+					if (mask) *mask = (0xffffffff >> (32 - unicast->OnLinkPrefixLength)) << (32 - unicast->OnLinkPrefixLength);
+					if (iface) *iface = strdup(name);
+					done = true;
+				}
 			}
+		} else {
+			for (IP_ADAPTER_UNICAST_ADDRESS* unicast = adapter->FirstUnicastAddress; unicast && !done; unicast = unicast->Next) {
+				if (adapter->FirstGatewayAddress && unicast->Address.lpSockaddr->sa_family == AF_INET && 
+					((struct sockaddr_in*)unicast->Address.lpSockaddr)->sin_addr.s_addr == addr.s_addr) {
+					addr = ((struct sockaddr_in*)unicast->Address.lpSockaddr)->sin_addr;
+					if (mask) *mask = (0xffffffff >> (32 - unicast->OnLinkPrefixLength)) << (32 - unicast->OnLinkPrefixLength);
+					if (iface) *iface = strdup(name);
+					done = true;
+				}
+			}
+
 		}
 	}
 
@@ -263,12 +275,20 @@ struct in_addr get_interface(char* iface, uint32_t *mask) {
 	for (struct ifaddrs* ifa = ifaddr; ifa != NULL; ifa = ifa->ifa_next) {
 		if (ifa->ifa_addr == NULL || ifa->ifa_addr->sa_family != AF_INET ||
 			!(ifa->ifa_flags & IFF_UP) || !(ifa->ifa_flags & IFF_MULTICAST) ||
-			ifa->ifa_flags & IFF_LOOPBACK ||
-			(iface && *iface && strcasecmp(iface, ifa->ifa_name)))
-			continue;
+			(ifa->ifa_flags & IFF_LOOPBACK)) continue;
+
+		LOG_ERROR("CYCLING %s", ifa->ifa_name);
+			
+		// we are looking for an addr from an iface
+		if (addr.s_addr == INADDR_NONE) {
+			if (in && *in && strcasecmp(in, ifa->ifa_name)) continue;
+		} else {
+			if (((struct sockaddr_in*)ifa->ifa_addr)->sin_addr.s_addr != addr.s_addr) continue;
+		}
 
 		addr = ((struct sockaddr_in*)ifa->ifa_addr)->sin_addr;
 		if (mask) *mask = ((struct sockaddr_in*)ifa->ifa_netmask)->sin_addr.s_addr;
+		if (iface) *iface = strdup(ifa->ifa_name);
 		break;
 	}
 

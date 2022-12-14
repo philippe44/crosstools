@@ -20,7 +20,7 @@
 #define ERROR_WOULDBLOCK EWOULDBLOCK
 #endif
 
-struct in_addr	get_interface(char *iface, uint32_t *mask);
+struct in_addr	get_interface(char *in, char **iface, uint32_t *mask);
 in_addr_t 	get_localhost(char **name);
 void 		get_mac(uint8_t mac[]);
 void 		netsock_init(void);
