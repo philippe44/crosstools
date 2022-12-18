@@ -277,8 +277,6 @@ struct in_addr get_interface(char* in, char **iface, uint32_t *mask) {
 			!(ifa->ifa_flags & IFF_UP) || !(ifa->ifa_flags & IFF_MULTICAST) ||
 			(ifa->ifa_flags & IFF_LOOPBACK)) continue;
 
-		LOG_ERROR("CYCLING %s", ifa->ifa_name);
-			
 		// we are looking for an addr from an iface
 		if (addr.s_addr == INADDR_NONE) {
 			if (in && *in && strcasecmp(in, ifa->ifa_name)) continue;
