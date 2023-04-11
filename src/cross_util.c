@@ -56,7 +56,7 @@ static __attribute__((unused)) log_level *loglevel = &util_loglevel;
 /*----------------------------------------------------------------------------*/
 void queue_init(cross_queue_t *queue, bool mutex, void (*cleanup)(void*)) {
 	queue->cleanup = cleanup;
-	queue->list.item = NULL;
+	queue->head.item = NULL;
 	queue->mutex = NULL;
 	if (mutex) {
 #ifdef HAS_PTHREAD
@@ -74,7 +74,7 @@ void queue_insert(cross_queue_t *queue, void *item) {
 	struct _cross_queue_s *list;
 
 	if (queue->mutex) mutex_lock(queue->mutex);
-	list = &queue->list;
+	list = &queue->head;
 
 	while (list->item) list = list->next;
 	list->item = item;
@@ -91,30 +91,25 @@ void queue_insert_first(cross_queue_t* queue, void* item) {
 	if (queue->mutex) mutex_lock(queue->mutex);
 
 	next = malloc(sizeof(struct _cross_queue_s));
-	memcpy(next, &queue->list, sizeof(struct _cross_queue_s));
-	queue->list.item = item;
-	queue->list.next = next;
+	memcpy(next, &queue->head, sizeof(struct _cross_queue_s));
+	queue->head.item = item;
+	queue->head.next = next;
 
 	if (queue->mutex) mutex_unlock(queue->mutex);
 }
 
-
 /*----------------------------------------------------------------------------*/
 void *queue_extract(cross_queue_t *queue) {
-	void *item;
-	struct _cross_queue_s *list;
-
 	if (queue->mutex) mutex_lock(queue->mutex);
-	list = &queue->list;
-	item = list->item;
+	
+	void *item = queue->head.item;
 
+	// if there an item, there is a valid next
 	if (item) {
-		struct _cross_queue_s *next = list->next;
-		if (next->item) {
-			list->item = next->item;
-			list->next = next->next;
-		} else list->item = NULL;
-		NFREE(next);
+		struct _cross_queue_s *next = queue->head.next;
+		queue->head.item = next->item;
+		queue->head.next = next->next;
+		free(next);
 	}
 
 	if (queue->mutex) mutex_unlock(queue->mutex);
@@ -122,24 +117,73 @@ void *queue_extract(cross_queue_t *queue) {
 	return item;
 }
 
+/*----------------------------------------------------------------------------*/
+bool queue_extract_item(cross_queue_t* queue, void* item) {
+	bool success = false;
+	if (queue->mutex) mutex_lock(queue->mutex);
+	struct _cross_queue_s* previous = &queue->head;
+
+	for (struct _cross_queue_s* walker = previous; walker->item; previous = walker, walker = walker->next) {
+		if (walker->item != item) continue;
+
+		// last item is last but one in the queue
+		previous->next = walker->next;
+
+		// can only release the item if we are not head
+		if (walker != &queue->head) free(walker);
+		else walker->item = NULL;
+		
+		success = true;
+		break;
+	}
+
+	if (queue->mutex) mutex_unlock(queue->mutex);
+	return success;
+}
+
+/*----------------------------------------------------------------------------*/
+void queue_walk_extract(cross_queue_t* queue) {
+	queue->previous->next = queue->walker->next;
+	if (queue->walker != &queue->head) free(queue->walker);
+	else queue->walker->item = NULL;
+}
+
+/*----------------------------------------------------------------------------*/
+void* queue_walk_start(cross_queue_t* queue) {
+	if (queue->mutex) mutex_lock(queue->mutex);
+	queue->previous = queue->walker = &queue->head;
+	return queue->walker->item;
+}
+
+/*----------------------------------------------------------------------------*/
+void* queue_walk_end(cross_queue_t* queue) {
+	if (queue->mutex) mutex_unlock(queue->mutex);
+}
+
+/*----------------------------------------------------------------------------*/
+void* queue_walk_next(cross_queue_t* queue) {
+	queue->previous = queue->walker;
+	if (queue->walker->item) queue->walker = queue->walker->next;
+	return queue->walker->item;
+}
 
 /*----------------------------------------------------------------------------*/
 void queue_flush(cross_queue_t *queue) {
-	struct _cross_queue_s *list;
+	struct _cross_queue_s *walker;
 
 	if (queue->mutex) mutex_lock(queue->mutex);
 
-	list = &queue->list;
+	walker = &queue->head;
 
-	while (list->item) {
-		struct _cross_queue_s *next = list->next;
-		if (queue->cleanup)	(*(queue->cleanup))(list->item);
-		if (list != &queue->list) { NFREE(list); }
-		list = next;
+	while (walker->item) {
+		struct _cross_queue_s *next = walker->next;
+		if (queue->cleanup)	queue->cleanup(walker->item);
+		if (walker != &queue->head) { NFREE(walker); }
+		walker = next;
 	}
 
-	if (list != &queue->list) { NFREE(list); }
-	queue->list.item = NULL;
+	if (walker != &queue->head) free(walker);
+	queue->head.item = NULL;
 
 	if (queue->mutex) {
 		mutex_unlock(queue->mutex);

@@ -40,7 +40,7 @@ typedef struct {
 	struct _cross_queue_s {
 		struct _cross_queue_s* next;
 		void* item;
-	} list;
+	} head, *walker, *previous;
 } cross_queue_t;
 
 void	queue_init(cross_queue_t *queue, bool mutex, void (*f)(void*));
@@ -49,6 +49,14 @@ void	queue_insert_first(cross_queue_t* queue, void* item);
 void*	queue_extract(cross_queue_t *queue);
 void	queue_flush(cross_queue_t *queue);
 void	queue_free_item(cross_queue_t* queue, void* item);
+bool	queue_extract_item(cross_queue_t* queue, void* item);
+
+// these are needed if current item is deleted during walk - this is not thread-safe
+void*	queue_walk_start(cross_queue_t* queue);
+void	queue_walk_end(cross_queue_t* queue);
+void*	queue_walk_next(cross_queue_t* queue);
+void*   queue_walk_extract(cross_queue_t* queue);
+
 
 /*
 Linked lists
