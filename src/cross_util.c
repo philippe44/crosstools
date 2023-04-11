@@ -156,7 +156,7 @@ void* queue_walk_start(cross_queue_t* queue) {
 }
 
 /*----------------------------------------------------------------------------*/
-void* queue_walk_end(cross_queue_t* queue) {
+void queue_walk_end(cross_queue_t* queue) {
 	if (queue->mutex) mutex_unlock(queue->mutex);
 }
 

@@ -55,7 +55,7 @@ bool	queue_extract_item(cross_queue_t* queue, void* item);
 void*	queue_walk_start(cross_queue_t* queue);
 void	queue_walk_end(cross_queue_t* queue);
 void*	queue_walk_next(cross_queue_t* queue);
-void*   queue_walk_extract(cross_queue_t* queue);
+void    queue_walk_extract(cross_queue_t* queue);
 
 
 /*
