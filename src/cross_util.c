@@ -141,6 +141,16 @@ bool queue_extract_item(cross_queue_t* queue, void* item) {
 	return success;
 }
 
+size_t	queue_count(cross_queue_t* queue) {
+	if (queue->mutex) mutex_lock(queue->mutex);
+
+	size_t count = 0;
+	for (struct _cross_queue_s* walker = &queue->head; walker->item; count++);
+	
+	if (queue->mutex) mutex_unlock(queue->mutex);
+	return count;
+}
+
 /*----------------------------------------------------------------------------*/
 void* queue_walk_extract(cross_queue_t* queue) {
 	void* item = queue->walker->item;

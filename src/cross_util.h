@@ -50,6 +50,7 @@ void*	queue_extract(cross_queue_t *queue);
 void	queue_flush(cross_queue_t *queue);
 void	queue_free_item(cross_queue_t* queue, void* item);
 bool	queue_extract_item(cross_queue_t* queue, void* item);
+size_t	queue_count(cross_queue_t* queue);
 
 // these are needed if current item is deleted during walk - this is not thread-safe
 void*	queue_walk_start(cross_queue_t* queue);
