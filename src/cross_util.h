@@ -26,7 +26,7 @@
 } while (0)
 
 /*
-Queues
+Queues (N+1 elements in a linked list, pointed item = NULL means last element)
 */
 typedef struct {
 #ifdef HAS_PTHREAD
@@ -55,11 +55,11 @@ bool	queue_extract_item(cross_queue_t* queue, void* item);
 void*	queue_walk_start(cross_queue_t* queue);
 void	queue_walk_end(cross_queue_t* queue);
 void*	queue_walk_next(cross_queue_t* queue);
-void    queue_walk_extract(cross_queue_t* queue);
+void*   queue_walk_extract(cross_queue_t* queue);
 
 
 /*
-Linked lists
+Linked lists (each item can be cast to a list core structure)
 */
 typedef struct cross_list_s {
 	struct cross_list_s* next;

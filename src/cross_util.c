@@ -142,10 +142,12 @@ bool queue_extract_item(cross_queue_t* queue, void* item) {
 }
 
 /*----------------------------------------------------------------------------*/
-void queue_walk_extract(cross_queue_t* queue) {
+void* queue_walk_extract(cross_queue_t* queue) {
+	void* item = queue->walker->item;
 	queue->previous->next = queue->walker->next;
 	if (queue->walker != &queue->head) free(queue->walker);
 	else queue->walker->item = NULL;
+	return item;
 }
 
 /*----------------------------------------------------------------------------*/
