@@ -39,8 +39,12 @@ int         tcp_connect_timeout(int sd, const struct sockaddr_in addr, int secon
 int			open_tcp_socket(struct in_addr host, unsigned short* port, bool blocking);
 int			open_udp_socket(struct in_addr host, unsigned short* port, bool blocking);
 
+bool		http_pico_init(struct in_addr host, uint16_t* base, uint16_t count);
+void		http_pico_close(void);
+void		http_pico_add_source(char* url, char* content_type, uint8_t* body, size_t len, uint32_t expiration);
+void		http_pico_del_source(char* url);
+
 bool 		http_parse_simple(int sd, char** request, key_data_t* rkd, char** body, int* len);
 bool 		http_parse(int sd, char *method, char *resource, char *proto, key_data_t *rkd, char **body, int *len);
 char*		http_send(int sd, char *method, key_data_t *rkd);
 int			http_read_line(int fd, char* line, int maxlen, int timeout, bool polling);
-int 		http_send_response(int sd, char *response);
