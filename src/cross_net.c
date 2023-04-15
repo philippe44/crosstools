@@ -701,10 +701,12 @@ static void free_source(void* p);
 static void free_client(void* p);
 
 /*----------------------------------------------------------------------------*/
-bool http_pico_init(struct in_addr host, uint16_t* base, uint16_t count) {
-	for (picoServer.sock = -1; count--; (*base)++) {
-		if ((picoServer.sock = bind_socket(host, base, SOCK_STREAM)) == -1) continue;
+bool http_pico_init(struct in_addr host, uint16_t* port, uint16_t count) {
+	for (picoServer.sock = -1; count--; (*port)++) {
+		if ((picoServer.sock = bind_socket(host, port, SOCK_STREAM)) == -1) continue;
 		
+		picoServer.host = host;
+		picoServer.port = *port;
 		queue_init(&picoServer.sources, false, free_source);
 		queue_init(&picoServer.clients, false, free_client);
 		pthread_create(&picoServer.thread, NULL, http_pico_thread, NULL);
