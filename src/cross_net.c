@@ -676,6 +676,8 @@ static struct {
 	bool running;
 	pthread_t thread;
 	int sock;
+	uint16_t port;
+	struct in_addr host;
 } picoServer;
 
 struct http_pico_source_s {
@@ -722,7 +724,7 @@ void http_pico_close(void) {
 }
 
 /*----------------------------------------------------------------------------*/
-void http_pico_add_source(char* url, char* content_type, uint8_t* body, size_t len, uint32_t expiration) {
+char* http_pico_add_source(char* url, char* content_type, uint8_t* body, size_t len, uint32_t expiration) {
 	struct http_pico_source_s* item = malloc(sizeof(struct http_pico_source_s));
 	item->expiration = expiration ? gettime_ms() + expiration * 1000 : 0;
 	item->clients = 0;
@@ -731,6 +733,10 @@ void http_pico_add_source(char* url, char* content_type, uint8_t* body, size_t l
 	item->body = malloc(len);
 	memcpy(item->body, body, len);
 	queue_insert(&picoServer.sources, item);
+
+	char* uri = NULL;
+	asprintf(&uri, "http://%s:%hu/%s", inet_ntoa(picoServer.host), picoServer.port, url);
+	return uri;
 }
 
 /*----------------------------------------------------------------------------*/
