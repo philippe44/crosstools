@@ -792,7 +792,7 @@ static void* http_pico_thread(void* arg) {
 		if (select(maxSock + 1, &rfds, &wfds, NULL, &timeout) <= 0 && 
 			!queue_count(&picoServer.clients) && !queue_count(&picoServer.sources)) continue;
 
-		// server new incoming requests
+		// serve new incoming requests
 		if (FD_ISSET(picoServer.sock, &rfds)) {
 			int sock = accept(picoServer.sock, NULL, NULL);
 
