@@ -46,6 +46,8 @@ typedef struct {
 void	queue_init(cross_queue_t *queue, bool mutex, void (*f)(void*));
 void	queue_insert(cross_queue_t *queue, void *item);
 void	queue_insert_first(cross_queue_t* queue, void* item);
+void	queue_lock(cross_queue_t* queue);
+void	queue_unlock(cross_queue_t* queue);
 void*	queue_extract(cross_queue_t *queue);
 void	queue_flush(cross_queue_t *queue);
 void	queue_free_item(cross_queue_t* queue, void* item);

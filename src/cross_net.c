@@ -707,8 +707,11 @@ bool http_pico_init(struct in_addr host, uint16_t* port, uint16_t count) {
 		
 		picoServer.host = host;
 		picoServer.port = *port;
-		queue_init(&picoServer.sources, false, free_source);
-		queue_init(&picoServer.clients, false, free_client);
+		listen(picoServer.sock, 1);
+
+		queue_init(&picoServer.sources, true, free_source);
+		queue_init(&picoServer.clients, true, free_client);
+
 		pthread_create(&picoServer.thread, NULL, http_pico_thread, NULL);
 		return true;
 	}
@@ -728,22 +731,26 @@ void http_pico_close(void) {
 /*----------------------------------------------------------------------------*/
 char* http_pico_add_source(char* url, char* content_type, uint8_t* body, size_t len, uint32_t expiration) {
 	struct http_pico_source_s* item = malloc(sizeof(struct http_pico_source_s));
+
 	item->expiration = expiration ? gettime_ms() + expiration * 1000 : 0;
 	item->clients = 0;
 	item->url = strdup(url);
 	item->content_type = strdup(content_type);
 	item->body = malloc(len);
+	item->len = len;
 	memcpy(item->body, body, len);
 	queue_insert(&picoServer.sources, item);
 
 	char* uri = NULL;
-	asprintf(&uri, "http://%s:%hu/%s", inet_ntoa(picoServer.host), picoServer.port, url);
+	asprintf(&uri, "http://%s:%hu%s", inet_ntoa(picoServer.host), picoServer.port, url);
+
+	LOG_INFO("source %s added", url);
 	return uri;
 }
 
 /*----------------------------------------------------------------------------*/
 void http_pico_del_source(char* url) {
-	// no mutex needed
+	queue_lock(&picoServer.sources);
 	for (struct _cross_queue_s* walker = &picoServer.sources.head; walker->item; walker = walker->next) {
 		struct http_pico_source_s* source = (struct http_pico_source_s*)walker->item;
 		if (!strcasecmp(url, source->url)) {
@@ -751,18 +758,20 @@ void http_pico_del_source(char* url) {
 			break;
 		}
 	}
+	queue_unlock(&picoServer.sources);
 }
 
 /*----------------------------------------------------------------------------*/
 static void free_source(void* p) {
 	struct http_pico_source_s* item = (struct http_pico_source_s*)p;
 	if (item->clients == 0) {
+		LOG_INFO("source %s released", item->url);
 		free(item->body);
 		free(item->url);
 		free(item->content_type);
 		free(item);
 	} else {
-		LOG_WARN("cannot free source (%d clients active)");
+		LOG_WARN("source %s cannot be released (%d clients active)", item->url, item->clients);
 	}
 }
 
@@ -770,6 +779,8 @@ static void free_source(void* p) {
 static void free_client(void* p) {
 	struct http_pico_client_s* item = (struct http_pico_client_s*)p;
 	if (item->sock != -1) closesocket(item->sock);
+	if (item->source->clients) item->source->clients--;
+	LOG_INFO("release client %u for source %s", item->sock, item->source->url);
 	free(item);
 }
 
@@ -780,20 +791,28 @@ static void* http_pico_thread(void* arg) {
 
 	FD_ZERO(&rfds);
 	FD_ZERO(&wfds);
+	FD_SET(picoServer.sock, &rfds);
 	int maxSock = picoServer.sock;
 
 	while (picoServer.running) {
 		struct timeval timeout = { 0, 250 * 1000 };
 
-		// wwe only want to read on the server socket, not on client's
+		// only check read status on main server's socket
 		FD_ZERO(&rfds);
 		FD_SET(picoServer.sock, &rfds);
+		int n = select(maxSock + 1, &rfds, &wfds, NULL, &timeout);
+		maxSock = picoServer.sock;
 
-		if (select(maxSock + 1, &rfds, &wfds, NULL, &timeout) <= 0 && 
-			!queue_count(&picoServer.clients) && !queue_count(&picoServer.sources)) continue;
+		// if we have nothing to read, write and no source or client then just loop
+		if (n <= 0 && !queue_count(&picoServer.clients) && !queue_count(&picoServer.sources)) {
+			FD_ZERO(&wfds);
+			continue;
+		}
+
+		uint32_t now = gettime_ms();
 
 		// serve new incoming requests
-		if (FD_ISSET(picoServer.sock, &rfds)) {
+		if (n > 0 && FD_ISSET(picoServer.sock, &rfds)) {
 			int sock = accept(picoServer.sock, NULL, NULL);
 
 			if (sock != -1 && picoServer.running) {
@@ -803,43 +822,37 @@ static void* http_pico_thread(void* arg) {
 					client->position = 0;
 					client->sock = sock;
 					client->source = source;
-					client->expiration = gettime_ms() + 60 * 1000;
+					client->expiration = now + 60 * 1000;
+					queue_insert(&picoServer.clients, client);
 					LOG_INFO("got artwork %s connection %u", source->url, sock);
 				} else {
-					closesocket(sock);
+					LOG_INFO("source not found %u", sock);
+					if (sock != -1) closesocket(sock);
 				}
 			}
 		}
-
-		uint32_t now = gettime_ms();
-		maxSock = picoServer.sock;
-		FD_ZERO(&wfds);
 		
 		// review active clients
 		for (struct http_pico_client_s* client = queue_walk_start(&picoServer.clients); client; client = queue_walk_next(&picoServer.clients)) {
 			// remove clients that are timedout
 			if (now > client->expiration) {
-				// cleanup sock
-				LOG_INFO("client connection timeout %s", client->source->url);
-				if (client->sock == -1) closesocket(client->sock);
 				queue_walk_extract(&picoServer.clients);
-				client->source->clients--;
 				free_client(client);
 				continue;
 			} 
 			
 			// send data to all writable clients
-			if (FD_ISSET(client->sock, &wfds)) {
+			if (n > 0 && FD_ISSET(client->sock, &wfds)) {
 				size_t bytes = min(8192, client->source->len - client->position);
-				send(client->sock, client->source->body + client->position, bytes, 0);
-				client->position += bytes;
+				int sent = send(client->sock, client->source->body + client->position, bytes, 0);
+				if (sent > 0) client->position += bytes;
 
 				// close connection and erase context if done
-				if (client->position == client->source->len) {
-					queue_walk_extract(&picoServer.clients);
-					client->source->clients--;
-					free_client(client);
+				if (sent <= 0 || client->position == client->source->len) {
 					LOG_INFO("served artwork %s", client->source->url);
+					queue_walk_extract(&picoServer.clients);
+					free_client(client);
+					FD_CLR(client->sock, &wfds);
 					continue;
 				}
 			}
@@ -871,14 +884,16 @@ static struct http_pico_source_s* handle_connection(int sock) {
 	char method[16], resource[64] = "";
 	key_data_t headers[16], resp[8] = { {NULL, NULL} };
 	struct http_pico_source_s* source = NULL;
+	int len;
 	uint32_t now = gettime_ms();
 	
-	if (!http_parse(sock, method, resource, NULL, headers, NULL, NULL)) {
+	if (!http_parse(sock, method, resource, NULL, headers, NULL, &len)) {
 		kd_free(headers);
 		return NULL;
 	}
 
 	// find a source that can serve that url
+	queue_lock(&picoServer.sources);
 	for (struct _cross_queue_s* walker = &picoServer.sources.head; walker->item; walker = walker->next) {
 		struct http_pico_source_s* item = (struct http_pico_source_s*)walker->item;
 		if (strcasecmp(resource, item->url) || (item->expiration && now > item->expiration)) continue;
@@ -888,9 +903,12 @@ static struct http_pico_source_s* handle_connection(int sock) {
 		kd_add(resp, "Content-Type", item->content_type);
 		kd_add(resp, "Connection", "close");
 		kd_vadd(resp, "Content-Length", "%zu", item->len);
+		break;
 	}
+	queue_unlock(&picoServer.sources);
 
 	char *buf = http_send(sock, source ? "HTTP/1.0 200 OK" : "HTTP/1.0 404 Not Found", resp);
+	LOG_INFO("responding %s", buf);
 		
 	NFREE(buf);
 	kd_free(resp);
@@ -963,13 +981,13 @@ bool http_parse_simple(int sock, char **request, key_data_t* rkd, char** body, i
 		rkd[i].key = strdup(line);
 		rkd[i].data = strdup(strltrim(dp + 1));
 
-		if (!strcasecmp(rkd[i].key, "Content-Length")) *len = atol(rkd[i].data);
+		if (len && !strcasecmp(rkd[i].key, "Content-Length")) *len = atol(rkd[i].data);
 
 		i++;
 		rkd[i].key = NULL;
 	}
 
-	if (*len) {
+	if (len && *len) {
 		int size = 0;
 
 		*body = malloc(*len + 1);
