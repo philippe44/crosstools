@@ -137,7 +137,7 @@ bool queue_extract_item(cross_queue_t* queue, void* item) {
 		if (walker->item != item) continue;
 
 		// need to memorize what we'll free up
-		void* p = walker == &queue->head ? walker->next : >walker;
+		void* p = walker == &queue->head ? walker->next : walker;
 		
 		// pop one item regardless
 		memcpy(previous, walker->next, sizeof(struct _cross_queue_s));
