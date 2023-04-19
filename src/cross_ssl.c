@@ -181,13 +181,13 @@ SYMDECL(SSL_set_fd, int, 2, SSL*, s, int, fd);
 SYMDECL(SSL_get_error, int, 2, const SSL*, s, int, ret_code);
 SYMDECL(SSL_ctrl, long, 4, SSL*, ssl, int, cmd, long, larg, void*, parg);
 SYMDECL(SSL_pending, int, 1, const SSL*, s);
-SYMDECL(SSL_set1_host, int, 2, const SSL*, s, char*, host);
+SYMDECL(SSL_set1_host, int, 2, SSL*, s, char*, host);
 
 SYMDECLV(SSL_free, void, 1, SSL*, s);
 SYMDECLV(SSL_CTX_free, void, 1, SSL_CTX *, ctx);
 
 SYMDECL(ERR_get_error, unsigned long, 0);
-SYMDECL(ERR_error_string, char*, 2, long int, e, char*, buf);
+SYMDECL(ERR_error_string, char*, 2, unsigned long, e, char*, buf);
 SYMDECL(SHA512_Init, int, 1, SHA512_CTX*, c);
 SYMDECL(SHA512_Update, int, 3, SHA512_CTX*, c, const void*, data, size_t, len);
 SYMDECL(SHA512_Final, int, 2, unsigned char*, md, SHA512_CTX*, c);
