@@ -181,7 +181,6 @@ SYMDECL(SSL_set_fd, int, 2, SSL*, s, int, fd);
 SYMDECL(SSL_get_error, int, 2, const SSL*, s, int, ret_code);
 SYMDECL(SSL_ctrl, long, 4, SSL*, ssl, int, cmd, long, larg, void*, parg);
 SYMDECL(SSL_pending, int, 1, const SSL*, s);
-SYMDECL(SSL_set1_host, int, 2, SSL*, s, char*, host);
 
 SYMDECLV(SSL_free, void, 1, SSL*, s);
 SYMDECLV(SSL_CTX_free, void, 1, SSL_CTX *, ctx);
@@ -238,7 +237,6 @@ bool cross_ssl_load(void) {
 	SYMLOAD(SSLhandle, SSL_CTX_ctrl);
 	SYMLOAD(SSLhandle, SSL_CTX_set_cipher_list);
 	SYMLOAD(SSLhandle, SSL_CTX_free);
-	SYMLOAD(SSLhandle, SSL_set1_host);
 	SYMLOAD(SSLhandle, SSL_CTX_set_options);
 	SYMLOAD(SSLhandle, SSL_ctrl);
 	SYMLOAD(SSLhandle, SSL_free);
