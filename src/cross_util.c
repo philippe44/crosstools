@@ -330,6 +330,7 @@ uint64_t gettime_us(void) {
 #if WIN
 	FILETIME ft;
 	GetSystemTimeAsFileTime(&ft);
+	//@FIXME => check time and epoch vs 01/01/1601
 	return ((uint64_t) ft.dwHighDateTime << 32 | ft.dwLowDateTime) / 10 + 0x83AA7E80LL * 1000 * 1000;
 #else
 	struct timeval tv;
