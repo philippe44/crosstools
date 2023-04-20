@@ -742,7 +742,7 @@ char* http_pico_add_source(char* url, char* content_type, uint8_t* body, size_t 
 	queue_insert(&picoServer.sources, item);
 
 	char* uri = NULL;
-	asprintf(&uri, "http://%s:%hu%s", inet_ntoa(picoServer.host), picoServer.port, url);
+	(void)!asprintf(&uri, "http://%s:%hu%s", inet_ntoa(picoServer.host), picoServer.port, url);
 
 	LOG_INFO("source %s added", url);
 	return uri;
