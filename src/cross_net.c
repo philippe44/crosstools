@@ -246,7 +246,7 @@ struct in_addr get_interface(char* in, char **iface, uint32_t *mask) {
 			for (IP_ADAPTER_UNICAST_ADDRESS* unicast = adapter->FirstUnicastAddress; unicast && !done; unicast = unicast->Next) {
 				if (adapter->FirstGatewayAddress && unicast->Address.lpSockaddr->sa_family == AF_INET) {
 					addr = ((struct sockaddr_in*)unicast->Address.lpSockaddr)->sin_addr;
-					if (mask) *mask = (0xffffffff >> (32 - unicast->OnLinkPrefixLength)) << (32 - unicast->OnLinkPrefixLength);
+					if (mask) *mask = htonl(0xFFFFFFFF << (32 - unicast->OnLinkPrefixLength));
 					if (iface) *iface = strdup(name);
 					done = true;
 				}
@@ -256,7 +256,7 @@ struct in_addr get_interface(char* in, char **iface, uint32_t *mask) {
 				if (adapter->FirstGatewayAddress && unicast->Address.lpSockaddr->sa_family == AF_INET && 
 					((struct sockaddr_in*)unicast->Address.lpSockaddr)->sin_addr.s_addr == addr.s_addr) {
 					addr = ((struct sockaddr_in*)unicast->Address.lpSockaddr)->sin_addr;
-					if (mask) *mask = (0xffffffff >> (32 - unicast->OnLinkPrefixLength)) << (32 - unicast->OnLinkPrefixLength);
+					if (mask) *mask = htonl(0xFFFFFFFF << (32 - unicast->OnLinkPrefixLength));
 					if (iface) *iface = strdup(name);
 					done = true;
 				}
