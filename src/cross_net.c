@@ -826,8 +826,8 @@ static void* http_pico_thread(void* arg) {
 					queue_insert(&picoServer.clients, client);
 					LOG_INFO("got artwork %s connection %u", source->url, sock);
 				} else {
-					LOG_INFO("source not found %u", sock);
-					if (sock != -1) closesocket(sock);
+					LOG_INFO("source not found or HEAD request %u", sock);
+					if (sock != -1) shutdown_socket(sock);
 				}
 			}
 		}
