@@ -46,5 +46,5 @@ void		http_pico_del_source(char* url);
 
 bool 		http_parse_simple(int sd, char** request, key_data_t* rkd, char** body, int* len);
 bool 		http_parse(int sd, char *method, char *resource, char *proto, key_data_t *rkd, char **body, int *len);
-char*		http_send(int sd, char *method, key_data_t *rkd);
+char*		http_send(int sd, const char *method, key_data_t *rkd);
 int			http_read_line(int fd, char* line, int maxlen, int timeout, bool polling);

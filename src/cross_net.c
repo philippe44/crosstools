@@ -1050,7 +1050,7 @@ int http_read_line(int fd, char* line, int maxlen, int timeout, bool polling) {
 }
 
 /*----------------------------------------------------------------------------*/
-char* http_send(int sock, char* method, key_data_t* rkd) {
+char* http_send(int sock, const char* method, key_data_t* rkd) {
 	unsigned sent, len;
 	char* resp = kd_dump(rkd);
 	char* data = malloc(strlen(method) + 2 + strlen(resp) + 2 + 1);

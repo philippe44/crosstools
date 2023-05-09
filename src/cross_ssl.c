@@ -23,6 +23,7 @@
 #include <openssl/aes.h>
 #include <openssl/bio.h>
 #include <openssl/evp.h>
+#include <openssl/srp.h>
 
 #ifndef SSL_STATIC_LIB
 static void *SSLhandle = NULL;
@@ -223,6 +224,30 @@ SYMDECL(EVP_PKEY_get_raw_public_key, int, 3, const EVP_PKEY*, pkey, unsigned cha
 SYMDECL(EVP_PKEY_derive_init, int, 1, EVP_PKEY_CTX *,ctx);
 SYMDECL(EVP_PKEY_derive_set_peer, int, 2, EVP_PKEY_CTX*, ctx, EVP_PKEY*, peer);
 SYMDECL(EVP_PKEY_derive, int, 3, EVP_PKEY_CTX*, ctx, unsigned char*, key, size_t*, keylen);
+SYMDECL(EVP_CIPHER_CTX_ctrl, int, 4, EVP_CIPHER_CTX*, ctx, int, type, int, arg, void*, ptr);
+SYMDECL(EVP_CIPHER_CTX_new, EVP_CIPHER_CTX*,  0);
+SYMDECL(EVP_EncryptInit, int, 4, EVP_CIPHER_CTX*, ctx, const EVP_CIPHER*, cipher, const unsigned char*, key, const unsigned char*, iv);
+SYMDECL(EVP_EncryptUpdate, int, 5, EVP_CIPHER_CTX*, ctx, unsigned char*, out, int*, outl, const unsigned char*, in, int, inl);
+SYMDECL(EVP_EncryptFinal, int, 3, EVP_CIPHER_CTX*, ctx, unsigned char*, out, int*, outl);
+SYMDECLV(EVP_CIPHER_CTX_free, void, 1, EVP_CIPHER_CTX*, ctx);
+SYMDECL(EVP_aes_128_gcm, const EVP_CIPHER*, 0);
+
+SYMDECL(BN_new, BIGNUM*, 0);
+SYMDECL(BN_rand, int, 4, BIGNUM*, rnd, int, bits, int, top, int, bottom);
+SYMDECLV(BN_free, void, 1, BIGNUM*, a);
+SYMDECL(BN_num_bits, int, 1, const BIGNUM*, a);
+SYMDECL(BN_bn2bin, int, 2, const BIGNUM*, a, unsigned char*, to);
+SYMDECL(BN_bn2hex, char*, 1, const BIGNUM*, a);
+SYMDECL(BN_bn2binpad, int, 3, const BIGNUM*, a, unsigned char*, to, int, tolen);
+SYMDECLV(CRYPTO_free, void, 3, void*, ptr, const char*, file, int, line);
+
+SYMDECL(SRP_get_default_gN, SRP_gN*, 1, const char*, id);
+SYMDECL(SRP_Verify_B_mod_N, int, 2, const BIGNUM*, B, const BIGNUM*, N);
+SYMDECL(SRP_Calc_A, BIGNUM*, 3, const BIGNUM*, a, const BIGNUM*, N, const BIGNUM*, g);
+SYMDECL(SRP_Calc_x, BIGNUM*, 3, const BIGNUM*, s, const char*, user, const char*, pass);
+SYMDECL(SRP_Calc_u, BIGNUM*, 3, const BIGNUM*, A, const BIGNUM*, B, const BIGNUM*, N);
+SYMDECL(SRP_Calc_client_key, BIGNUM*, 6, const BIGNUM*, N, const BIGNUM*, B, const BIGNUM*, g, const BIGNUM*, x, const BIGNUM*, a, const BIGNUM*, u);
+SYMDECL(SHA1, unsigned char*, 3, const unsigned char*, d, size_t, n, unsigned char*, md);
 
 bool cross_ssl_load(void) {
 	CRYPThandle = dlopen_try(LIBCRYPTO, RTLD_NOW);
@@ -295,6 +320,30 @@ bool cross_ssl_load(void) {
 	SYMLOAD(CRYPThandle, EVP_PKEY_derive_init);
 	SYMLOAD(CRYPThandle, EVP_PKEY_derive_set_peer);
 	SYMLOAD(CRYPThandle, EVP_PKEY_derive);
+	SYMLOAD(CRYPThandle, EVP_CIPHER_CTX_ctrl);
+	SYMLOAD(CRYPThandle, EVP_CIPHER_CTX_new);
+	SYMLOAD(CRYPThandle, EVP_EncryptInit);
+	SYMLOAD(CRYPThandle, EVP_EncryptUpdate);
+	SYMLOAD(CRYPThandle, EVP_EncryptFinal);
+	SYMLOAD(CRYPThandle, EVP_CIPHER_CTX_free);
+	SYMLOAD(CRYPThandle, EVP_aes_128_gcm);
+
+	SYMLOAD(CRYPThandle, BN_new);
+	SYMLOAD(CRYPThandle, BN_rand);
+	SYMLOAD(CRYPThandle, BN_free);
+	SYMLOAD(CRYPThandle, BN_num_bits);
+	SYMLOAD(CRYPThandle, BN_bn2bin);
+	SYMLOAD(CRYPThandle, BN_bn2binpad);
+	SYMLOAD(CRYPThandle, BN_bn2hex);
+	SYMLOAD(CRYPThandle, CRYPTO_free);
+
+	SYMLOAD(CRYPThandle, SRP_get_default_gN);
+	SYMLOAD(CRYPThandle, SRP_Verify_B_mod_N);
+	SYMLOAD(CRYPThandle, SRP_Calc_A);
+	SYMLOAD(CRYPThandle, SRP_Calc_x);
+	SYMLOAD(CRYPThandle, SRP_Calc_u);
+	SYMLOAD(CRYPThandle, SRP_Calc_client_key);
+	SYMLOAD(CRYPThandle, SHA1);
 
 	OPENSSL_init_ssl(0, NULL);
 

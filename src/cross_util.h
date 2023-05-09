@@ -85,8 +85,8 @@ typedef struct key_data_s {
 } key_data_t;
 
 char*		kd_lookup(key_data_t *kd, char *key);
-bool 		kd_add(key_data_t *kd, char *key, char *value);
-bool 		kd_vadd(key_data_t *kd, char *key, char *fmt, ...);
+bool 		kd_add(key_data_t *kd, const char *key, const char *value);
+bool 		kd_vadd(key_data_t *kd, const char *key, const char *fmt, ...);
 char* 		kd_dump(key_data_t *kd);
 void 		kd_free(key_data_t *kd);
 

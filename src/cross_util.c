@@ -460,7 +460,7 @@ char *kd_lookup(key_data_t *kd, char *key) {
 
 
 /*----------------------------------------------------------------------------*/
-bool kd_add(key_data_t *kd, char *key, char *data) {
+bool kd_add(key_data_t *kd, const char *key, const char *data) {
 	int i = 0;
 	while (kd && kd[i].key) i++;
 
@@ -472,7 +472,7 @@ bool kd_add(key_data_t *kd, char *key, char *data) {
 }
 
 /*----------------------------------------------------------------------------*/
-bool kd_vadd(key_data_t *kd, char *key, char *fmt, ...) {
+bool kd_vadd(key_data_t *kd, const char *key, const char *fmt, ...) {
 	int i = 0;
 	va_list args;
 	while (kd && kd[i].key) i++;
