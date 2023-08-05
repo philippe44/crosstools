@@ -941,7 +941,7 @@ bool http_parse(int sock, char* method, char* resource, char* proto, key_data_t*
 /*----------------------------------------------------------------------------*/
 bool http_parse_simple(int sock, char **request, key_data_t* rkd, char** body, int* len) {
 	char line[1024];
-	int i, timeout = 100;
+	int i, timeout = 250;
 
 	rkd[0].key = NULL;
 
