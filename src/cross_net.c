@@ -544,6 +544,7 @@ int tcp_connect_timeout(int sd, const struct sockaddr_in addr, int ms) {
 #else
 		if (last_error() != EINPROGRESS) {
 #endif
+			LOG_ERROR("failed connect() socket %d (errno: %d)", sd, last_error());
 			return -1;
 		}
 	}
@@ -562,6 +563,7 @@ int tcp_connect_timeout(int sd, const struct sockaddr_in addr, int ms) {
 		return error;
 	}
 
+	LOG_ERROR("failed connecting on select() socket %d", sd);
 	return -1;
 }
 
