@@ -34,7 +34,7 @@ const char *logtime(void) {
 	struct timeval tv;
 	gettimeofday(&tv, NULL);
 	strftime(buf, sizeof(buf), "[%T.", localtime(&tv.tv_sec));
-	sprintf(buf+strlen(buf), "%06ld]", (long)tv.tv_usec);
+	sprintf(buf+strlen(buf), "%03ld]", (long)tv.tv_usec/1000);
 #endif
 	return buf;
 }
