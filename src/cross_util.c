@@ -129,20 +129,17 @@ void *queue_extract(cross_queue_t *queue) {
 
 /*----------------------------------------------------------------------------*/
 bool queue_extract_item(cross_queue_t* queue, void* item) {
-	bool success = false;
+	bool success = item == NULL;
 	if (queue->mutex) mutex_lock(queue->mutex);
-	struct _cross_queue_s* previous = &queue->head;
 
-	for (struct _cross_queue_s* walker = previous; walker->item; previous = walker, walker = walker->next) {
+	for (struct _cross_queue_s* walker = &queue->head; item && walker->item; walker = walker->next) {
 		if (walker->item != item) continue;
 
-		// need to memorize what we'll free up
-		void* p = walker == &queue->head ? walker->next : walker;
-		
-		// pop one item regardless
-		memcpy(previous, walker->next, sizeof(struct _cross_queue_s));
-		free(p);
-		
+		// if there is an item, there is always a next
+		void* removed = walker->next;
+		memcpy(walker, walker->next, sizeof(struct _cross_queue_s));
+		free(removed);
+
 		success = true;
 		break;
 	}
@@ -186,10 +183,10 @@ void* queue_walk_next(cross_queue_t* queue) {
 /*----------------------------------------------------------------------------*/
 void* queue_walk_extract(cross_queue_t* queue) {
 	void* item = queue->walker->item;
-	void *release = queue->walker->next;
 
+	void* removed = queue->walker->next;
 	memcpy(queue->walker, queue->walker->next, sizeof(struct _cross_queue_s));
-	free(release);
+	free(removed);
 	
 	queue->walk = false;
 	return item;
