@@ -40,7 +40,8 @@ typedef struct {
 	struct _cross_queue_s {
 		struct _cross_queue_s* next;
 		void* item;
-	} head, *walker, *previous;
+	} head, *walker;
+	bool walk;
 } cross_queue_t;
 
 void	queue_init(cross_queue_t *queue, bool mutex, void (*f)(void*));

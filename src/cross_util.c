@@ -166,7 +166,8 @@ size_t	queue_count(cross_queue_t* queue) {
 /*----------------------------------------------------------------------------*/
 void* queue_walk_start(cross_queue_t* queue) {
 	if (queue->mutex) mutex_lock(queue->mutex);
-	queue->previous = queue->walker = &queue->head;
+	queue->walker = &queue->head;
+	queue->walk = true;
 	return queue->walker->item;
 }
 
@@ -177,20 +178,20 @@ void queue_walk_end(cross_queue_t* queue) {
 
 /*----------------------------------------------------------------------------*/
 void* queue_walk_next(cross_queue_t* queue) {
-	queue->previous = queue->walker;
-	if (queue->walker->item) queue->walker = queue->walker->next;
+	if (queue->walker->item && queue->walk) queue->walker = queue->walker->next;
+	queue->walk = true;
 	return queue->walker->item;
 }
 
 /*----------------------------------------------------------------------------*/
 void* queue_walk_extract(cross_queue_t* queue) {
 	void* item = queue->walker->item;
-	void *p = queue->walker == &queue->head ? queue->walker->next : queue->walker;
+	void *release = queue->walker->next;
 
-	memcpy(queue->previous, queue->walker->next, sizeof(struct _cross_queue_s));
-	free(p);
+	memcpy(queue->walker, queue->walker->next, sizeof(struct _cross_queue_s));
+	free(release);
 	
-	queue->walker = queue->previous;
+	queue->walk = false;
 	return item;
 }
 
