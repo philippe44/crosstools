@@ -395,15 +395,26 @@ int strremovechar(char* str, char c)
 
 /*---------------------------------------------------------------------------*/
 int hex2bytes(char* hex, uint8_t** bytes) {
-	size_t i, len = strlen(hex) / 2;
+	size_t len = strlen(hex) / 2;
 
 	if (!*bytes && (*bytes = malloc(len)) == NULL) return 0;
 
-	for (i = 0; i < len; i++) {
+	for (size_t i = 0; i < len; i++) {
 		sscanf(hex + i * 2, "%2hhx", *bytes + i);
 	}
 
 	return len;
+}
+
+/*---------------------------------------------------------------------------*/
+int bytes2hex(uint8_t* bytes, size_t len, char** hex) {
+	if (!*hex && (*hex = malloc(len*2)) == NULL) return 0;
+
+	for (size_t i = 0; i < len; i++) {
+		sprintf(*hex + i * 2, "%02hhx", bytes[i]);
+	}
+
+	return len * 2;
 }
 
 /*---------------------------------------------------------------------------*/

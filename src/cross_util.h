@@ -115,4 +115,5 @@ uint64_t	gettime_ms64(void);
 uint64_t 	gettime_us(void);
 uint32_t	hash32(char* str);
 int			hex2bytes(char* hex, uint8_t** bytes);
+int			bytes2hex(uint8_t* bytes, size_t len, char** hex);
 void		touch_memory(uint8_t* buf, size_t size);
