@@ -108,6 +108,12 @@ char* url_decode(char* str);
 char* xml_encode(char* src);
 
 /*
+Base64 tools
+*/
+int base64_encode(const void* data, int size, char** str);
+int base64_decode(const char* str, void* data);
+
+/*
 Kitchen sink
 */
 uint32_t	gettime_ms(void);
