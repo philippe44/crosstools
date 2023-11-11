@@ -191,6 +191,7 @@ SYMDECL(ERR_error_string, char*, 2, unsigned long, e, char*, buf);
 SYMDECL(SHA512_Init, int, 1, SHA512_CTX*, c);
 SYMDECL(SHA512_Update, int, 3, SHA512_CTX*, c, const void*, data, size_t, len);
 SYMDECL(SHA512_Final, int, 2, unsigned char*, md, SHA512_CTX*, c);
+SYMDECL(MD5, unsigned char*, 3, const unsigned char*, d, size_t, n, unsigned char*, md);
 SYMDECL(RAND_bytes, int, 2, unsigned char*, buf, int, num);
 SYMDECL(RSA_new, RSA*, 0);
 SYMDECL(RSA_size, int, 1, const RSA*, rsa);
@@ -287,6 +288,7 @@ bool cross_ssl_load(void) {
 	SYMLOAD(CRYPThandle, SHA512_Init);
 	SYMLOAD(CRYPThandle, SHA512_Update);
 	SYMLOAD(CRYPThandle, SHA512_Final);
+	SYMLOAD(CRYPThandle, MD5);
 	SYMLOAD(CRYPThandle, ERR_clear_error);
 	SYMLOAD(CRYPThandle, ERR_get_error);
 	SYMLOAD(CRYPThandle, ERR_error_string);
