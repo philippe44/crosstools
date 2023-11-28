@@ -939,6 +939,8 @@ bool http_parse(int sock, char* method, char* resource, char* proto, key_data_t*
 		if (proto) sscanf(request, "%*s%*s%s", proto);
 	}
 
+	if (request) free(request);
+
 	return res;
 }
 
