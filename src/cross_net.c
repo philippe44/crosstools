@@ -732,6 +732,7 @@ void http_pico_close(void) {
 
 /*----------------------------------------------------------------------------*/
 char* http_pico_add_source(char* url, char* content_type, uint8_t* body, size_t len, uint32_t expiration) {
+	if (!picoServer.running) return NULL;
 	struct http_pico_source_s* item = malloc(sizeof(struct http_pico_source_s));
 
 	item->expiration = expiration ? gettime_ms() + expiration * 1000 : 0;
