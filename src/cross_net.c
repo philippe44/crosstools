@@ -855,8 +855,8 @@ static void* http_pico_thread(void* arg) {
 				if (sent <= 0 || client->position == client->source->len) {
 					LOG_INFO("served artwork %s", client->source->url);
 					queue_walk_extract(&picoServer.clients);
-					free_client(client);
 					FD_CLR(client->sock, &wfds);
+					free_client(client);
 					continue;
 				}
 			}
