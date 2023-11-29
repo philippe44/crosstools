@@ -559,7 +559,7 @@ int tcp_connect_timeout(int sd, const struct sockaddr_in addr, int ms) {
 	if (select(sd + 1, NULL, &w, &e, ms ? &tval : NULL) == 1 && FD_ISSET(sd, &w)) {
 		int	error = 0;
 		socklen_t len = sizeof(error);
-		getsockopt(sd, SOL_SOCKET, SO_ERROR, (void*)&error, &len);
+		getsockopt(sd, SOL_SOCKET, SO_ERROR, &error, &len);
 		return error;
 	}
 
