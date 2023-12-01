@@ -912,7 +912,7 @@ static struct http_pico_source_s* handle_connection(int sock) {
 	queue_unlock(&picoServer.sources);
 
 	char *buf = http_send(sock, source ? "HTTP/1.0 200 OK" : "HTTP/1.0 404 Not Found", resp);
-	LOG_INFO("responding %s", buf);
+	LOG_INFO("url %s request:\n%s", resource, buf);
 		
 	NFREE(buf);
 	kd_free(resp);
