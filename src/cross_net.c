@@ -22,6 +22,7 @@
 #include <netdb.h>
 #include <ctype.h>
 #include <ifaddrs.h>
+#include <unistd.h>
 #if FREEBSD || SUNOS
 #if SUNOS
 #include <sys/sockio.h>
@@ -38,6 +39,7 @@
 #endif
 #elif WIN
 #include <iphlpapi.h>
+#include <process.h>
 #endif
 
 #include "cross_net.h"
@@ -422,6 +424,67 @@ in_addr_t get_localhost(char **name) {
 	// missing platform here ...
 	return INADDR_ANY;
 #endif
+}
+
+#define IP_HEADER_SIZE 20
+#define ICMP_HEADER_SIZE 8
+#define ICMP_ECHO 8
+#define ICMP_REPLY 0
+
+/*----------------------------------------------------------------------------*/
+static uint16_t checksum(void* b, int len) {
+	unsigned short* buf = b;
+	unsigned int sum = 0;
+
+	for (sum = 0; len > 1; len -= 2) sum += *buf++;
+	if (len == 1) sum += *(unsigned char*)buf;
+
+	sum = (sum >> 16) + (sum & 0xFFFF);
+	sum += (sum >> 16);
+	return ~sum;
+}
+
+/*----------------------------------------------------------------------------*/
+bool ping_host(struct in_addr host) {
+	struct icmp_s {
+		uint8_t  type, code;
+		uint16_t checksum, id, sequence;
+	} icmp;
+
+	int sock = socket(AF_INET, SOCK_RAW, IPPROTO_ICMP);
+	bool alive = false;
+
+	struct sockaddr_in addr;
+	memset(&addr, 0, sizeof(addr));
+	addr.sin_family = AF_INET;
+	addr.sin_addr = host;
+
+	memset(&icmp, 0, sizeof(icmp));
+	icmp.type = ICMP_ECHO;
+	icmp.id = getpid();
+	icmp.sequence = 1;
+	icmp.checksum = checksum(&icmp, sizeof(icmp));
+
+	// Send the packet
+	sendto(sock, (void*)&icmp, sizeof(icmp), 0, (struct sockaddr*)&addr, sizeof(addr));
+
+	fd_set rfds;
+	FD_ZERO(&rfds);
+	FD_SET(sock, &rfds);
+	struct timeval timeout = { 0, 100 * 1000 };
+
+	if (select(sock, &rfds, NULL, NULL, &timeout) > 0) {
+		socklen_t addrlen = sizeof(addr);
+		char buffer[sizeof(icmp) + IP_HEADER_SIZE];
+
+		if (recvfrom(sock, (void*)&buffer, sizeof(buffer), 0, (struct sockaddr*)&addr, &addrlen) > 0) {
+			struct icmp_s* icmp = (struct icmp_s*)(buffer + IP_HEADER_SIZE);
+			if (icmp->type == 0) alive = true;
+		}
+	}
+
+	closesocket(sock);
+	return alive;
 }
 
 /*----------------------------------------------------------------------------*/
