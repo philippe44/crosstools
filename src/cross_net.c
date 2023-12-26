@@ -445,7 +445,7 @@ static uint16_t checksum(void* b, int len) {
 }
 
 /*----------------------------------------------------------------------------*/
-bool ping_host(struct in_addr host) {
+bool ping_host(struct in_addr host, int wait) {
 	struct icmp_s {
 		uint8_t  type, code;
 		uint16_t checksum, id, sequence;
@@ -471,9 +471,9 @@ bool ping_host(struct in_addr host) {
 	fd_set rfds;
 	FD_ZERO(&rfds);
 	FD_SET(sock, &rfds);
-	struct timeval timeout = { 0, 100 * 1000 };
+	struct timeval timeout = { 0, wait * 1000 };
 
-	if (select(sock, &rfds, NULL, NULL, &timeout) > 0) {
+	if (!wait || select(sock, &rfds, NULL, NULL, &timeout) > 0) {
 		socklen_t addrlen = sizeof(addr);
 		char buffer[sizeof(icmp) + IP_HEADER_SIZE];
 

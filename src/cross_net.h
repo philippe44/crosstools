@@ -23,7 +23,7 @@
 struct in_addr	get_interface(char *in, char **iface, uint32_t *mask);
 in_addr_t 	get_localhost(char **name);
 void 		get_mac(uint8_t mac[]);
-bool		ping_host(struct in_addr host);
+bool		ping_host(struct in_addr host, int timeout);
 void 		netsock_init(void);
 void 		netsock_close(void);
 
