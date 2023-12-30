@@ -115,6 +115,7 @@ int asprintf(char** s, const char* fmt, ...);
 int vasprintf(char** strp, const char* fmt, va_list args);
 
 #define strcasecmp stricmp
+#define strncasecmp strnicmp
 char* strcasestr(const char* haystack, const char* needle);
 char* strsep(char** stringp, const char* delim);
 char* strndup(const char* s, size_t n);
