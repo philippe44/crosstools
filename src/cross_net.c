@@ -718,7 +718,7 @@ bool bind_host(int sd, struct in_addr host, unsigned short* port) {
 #endif
 
 	if (bind(sd, (struct sockaddr*)&addr, sizeof(addr)) < 0) {
-		LOG_ERROR("cannot bind: %s", strerror(errno));
+		if (!*port) LOG_ERROR("cannot bind: %s", strerror(errno));
 		return false;
 	}
 
