@@ -101,21 +101,24 @@ ret fn(P(n,__VA_ARGS__)) {					\
 
 #if WIN
 static char *LIBSSL[] = {
-			"libssl-1_1.dll",
+			"libssl-3-x64.dll", "libssl-3.dll",
+			"libssl-1_1-x64.dll", "libssl-1_1.dll",
 			"libssl.dll",
 			"ssleay32.dll", NULL };
 static char *LIBCRYPTO[] = {
-			"libcrypto-1_1.dll",
+			"libcrypto-3-x64.dll", "libcrypto-3.dll",
+			"libcrypto-1_1-x64.dll", "libcrypto-1_1.dll",
 			"libssl.dll",
 			"libeay32.dll", NULL };
 #elif OSX
 static char *LIBSSL[] = {
-			"libssl.dylib", NULL };
+			"libssl.3.dylib", "libssl.dylib", NULL };
 static char *LIBCRYPTO[] 	= {
-			"libcrypto.dylib", NULL };
+			"libcrypto.3.dylib", "libcrypto.dylib", NULL };
 #else
 static char *LIBSSL[] 		= {
 			"libssl.so",
+			"libssl.so.3",
 			"libssl.so.1.1.1",
 			"libssl.so.1.1.0",
 			"libssl.so.1.1",
@@ -124,6 +127,7 @@ static char *LIBSSL[] 		= {
 			"libssl.so.1.0.0", NULL };
 static char *LIBCRYPTO[] 	= {
 			"libcrypto.so",
+			"libcrypto.so.3",
 			"libcrypto.so.1.1.1",
 			"libcrypto.so.1.1.0",
 			"libcrypto.so.1.1",
@@ -164,7 +168,7 @@ static void shim_ERR_remove_thread_state(void* tid) {
 }
 
 SHIMDECL(OPENSSL_init_ssl, int, 2, uint64_t, opts, const OPENSSL_INIT_SETTINGS*, settings);
-SHIMDECL(SSL_CTX_set_options, unsigned long, 2, SSL_CTX*, ctx, unsigned long, op);
+SHIMDECL(SSL_CTX_set_options, uint64_t, 2, SSL_CTX*, ctx, uint64_t, op);
 SHIMDECL(TLS_client_method, const SSL_METHOD*, 0);
 SHIMDECLV(ERR_remove_thread_state, void, 1, void*, tid);
 
