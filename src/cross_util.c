@@ -14,7 +14,6 @@
 #include <stdarg.h>
 
 #include "platform.h"
-#include "cross_util.h"
 
 #if LINUX || OSX || FREEBSD || SUNOS
 #include <ctype.h>
@@ -34,7 +33,6 @@
 #define mutex_unlock(m)
 #endif
 
-#include "platform.h"
 #include "cross_util.h"
 #include "cross_log.h"
 
