@@ -949,7 +949,7 @@ static void* http_pico_thread(void* arg) {
 /*----------------------------------------------------------------------------*/
 static struct http_pico_source_s* handle_connection(int sock) {
 	char method[16], resource[64] = "";
-	key_data_t headers[16], resp[8] = { {NULL, NULL} };
+	key_data_t headers[16] = {{ .count = 16, NULL}}, resp[8] = {{ .key = NULL, NULL}};
 	struct http_pico_source_s* source = NULL;
 	int len;
 	uint32_t now = gettime_ms();
@@ -997,9 +997,9 @@ bool http_parse(int sock, char* method, char* resource, char* proto, key_data_t*
 	bool res = http_parse_simple(sock, &request, rkd, body, len);
 
 	if (res && request) {
-		if (method) sscanf(request, "%s", method);
+		if (method) sscanf(request, "%10s", method);
 		if (resource) sscanf(request, "%*s%s", resource);
-		if (proto) sscanf(request, "%*s%*s%s", proto);
+		if (proto) sscanf(request, "%*s%*s%10s", proto);
 	}
 
 	if (request) free(request);
@@ -1011,6 +1011,7 @@ bool http_parse(int sock, char* method, char* resource, char* proto, key_data_t*
 bool http_parse_simple(int sock, char **request, key_data_t* rkd, char** body, int* len) {
 	char line[1024];
 	int i, timeout = 250;
+	uint32_t count = rkd[0].count;
 
 	rkd[0].key = NULL;
 
@@ -1052,11 +1053,11 @@ bool http_parse_simple(int sock, char **request, key_data_t* rkd, char** body, i
 
 		if (len && !strcasecmp(rkd[i].key, "Content-Length")) *len = atol(rkd[i].data);
 
-		i++;
-		rkd[i].key = NULL;
+		if (!count || i < count - 1) rkd[++i].key = NULL;
+		else break;
 	}
 
-	if (len && *len) {
+	if (len && *len > 0) {
 		int size = 0;
 
 		*body = malloc(*len + 1);
@@ -1066,7 +1067,7 @@ bool http_parse_simple(int sock, char **request, key_data_t* rkd, char** body, i
 			size += bytes;
 		}
 
-		(*body)[*len] = '\0';
+		if (*body) (*body)[*len] = '\0';
 
 		if (!*body || size != *len) {
 			LOG_ERROR("content length receive error %d %d", *len, size);

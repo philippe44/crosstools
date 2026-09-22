@@ -81,7 +81,10 @@ Key-Value tools
 */
 typedef struct key_data_s {
 
-	char *key;
+	union {
+		char* key;
+		uint32_t count;
+	};
 	char *data;
 } key_data_t;
 
