@@ -503,7 +503,10 @@ bool kd_vadd(key_data_t *kd, const char *key, const char *fmt, ...) {
 /*----------------------------------------------------------------------------*/
 void kd_free(key_data_t *kd) {
 	int i = 0;
-	while (kd && kd[i].key){
+
+	if (!kd) return;
+
+	while (kd[i].key){
 		free(kd[i].key);
 		if (kd[i].data) free(kd[i].data);
 		i++;

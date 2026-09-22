@@ -81,12 +81,14 @@ Key-Value tools
 */
 typedef struct key_data_s {
 
-	union {
-		char* key;
-		uint32_t count;
-	};
-	char *data;
+	char* key;
+	char* data;
 } key_data_t;
+
+typedef struct key_data_list_s {
+	uint32_t count;
+	key_data_t *kd;
+} key_data_list_t;
 
 char*		kd_lookup(key_data_t *kd, char *key);
 bool 		kd_add(key_data_t *kd, const char *key, const char *value);

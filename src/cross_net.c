@@ -949,13 +949,14 @@ static void* http_pico_thread(void* arg) {
 /*----------------------------------------------------------------------------*/
 static struct http_pico_source_s* handle_connection(int sock) {
 	char method[16], resource[64] = "";
-	key_data_t headers[16] = {{ .count = 16, NULL}}, resp[8] = {{ .key = NULL, NULL}};
+	key_data_t resp[8] = { 0 };
+	key_data_list_t headers = { 16, (key_data_t[16]){ 0 } };
 	struct http_pico_source_s* source = NULL;
 	int len;
 	uint32_t now = gettime_ms();
 	
-	if (!http_parse(sock, method, resource, NULL, headers, NULL, &len)) {
-		kd_free(headers);
+	if (!http_parse(sock, method, resource, NULL, &headers, NULL, &len)) {
+		kd_free(headers.kd);
 		return NULL;
 	}
 
@@ -979,7 +980,7 @@ static struct http_pico_source_s* handle_connection(int sock) {
 		
 	NFREE(buf);
 	kd_free(resp);
-	kd_free(headers);
+	kd_free(headers.kd);
 
 	// only return a source if this is not a HEAD request
 	return strcasecmp(method, "HEAD") ? source : NULL;
@@ -992,7 +993,7 @@ static struct http_pico_source_s* handle_connection(int sock) {
 /*----------------------------------------------------------------------------*/
 
 /*----------------------------------------------------------------------------*/
-bool http_parse(int sock, char* method, char* resource, char* proto, key_data_t* rkd, char** body, int* len) {
+bool http_parse(int sock, char* method, char* resource, char* proto, key_data_list_t* rkd, char** body, int* len) {
 	char* request = NULL;
 	bool res = http_parse_simple(sock, &request, rkd, body, len);
 
@@ -1008,10 +1009,10 @@ bool http_parse(int sock, char* method, char* resource, char* proto, key_data_t*
 }
 
 /*----------------------------------------------------------------------------*/
-bool http_parse_simple(int sock, char **request, key_data_t* rkd, char** body, int* len) {
+bool http_parse_simple(int sock, char **request, key_data_list_t* rkd_list, char** body, int* len) {
 	char line[1024];
 	int i, timeout = 250;
-	uint32_t count = rkd[0].count;
+	key_data_t* rkd = rkd_list->kd;
 
 	rkd[0].key = NULL;
 
@@ -1053,7 +1054,7 @@ bool http_parse_simple(int sock, char **request, key_data_t* rkd, char** body, i
 
 		if (len && !strcasecmp(rkd[i].key, "Content-Length")) *len = atol(rkd[i].data);
 
-		if (!count || i < count - 1) rkd[++i].key = NULL;
+		if (!rkd_list->count || i < rkd_list->count - 1) rkd[++i].key = NULL;
 		else break;
 	}
 

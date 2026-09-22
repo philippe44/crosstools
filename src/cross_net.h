@@ -45,7 +45,7 @@ void		http_pico_close(void);
 char*		http_pico_add_source(char* url, char* content_type, uint8_t* body, size_t len, uint32_t expiration);
 void		http_pico_del_source(char* url);
 
-bool 		http_parse_simple(int sd, char** request, key_data_t* rkd, char** body, int* len);
-bool 		http_parse(int sd, char *method, char *resource, char *proto, key_data_t *rkd, char **body, int *len);
+bool 		http_parse_simple(int sd, char** request, key_data_list_t* rkd, char** body, int* len);
+bool 		http_parse(int sd, char *method, char *resource, char *proto, key_data_list_t *rkd_meta, char **body, int *len);
 char*		http_send(int sd, const char *method, key_data_t *rkd);
 int			http_read_line(int fd, char* line, int maxlen, int timeout, bool polling);
