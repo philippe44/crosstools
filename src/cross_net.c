@@ -950,7 +950,7 @@ static void* http_pico_thread(void* arg) {
 static struct http_pico_source_s* handle_connection(int sock) {
 	char method[16], resource[64] = "";
 	key_data_t resp[8] = { 0 };
-	key_data_list_t headers = { 16, (key_data_t[16]){ 0 } };
+	key_data_list_t headers = { 16, (key_data_t[16]){{ 0 }} };
 	struct http_pico_source_s* source = NULL;
 	int len;
 	uint32_t now = gettime_ms();
@@ -1011,7 +1011,7 @@ bool http_parse(int sock, char* method, char* resource, char* proto, key_data_li
 /*----------------------------------------------------------------------------*/
 bool http_parse_simple(int sock, char **request, key_data_list_t* rkd_list, char** body, int* len) {
 	char line[1024];
-	int i, timeout = 250;
+	uint32_t i, timeout = 250;
 	key_data_t* rkd = rkd_list->kd;
 
 	rkd[0].key = NULL;
