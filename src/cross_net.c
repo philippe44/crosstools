@@ -998,9 +998,9 @@ bool http_parse(int sock, char* method, char* resource, char* proto, key_data_li
 	bool res = http_parse_simple(sock, &request, rkd, body, len);
 
 	if (res && request) {
-		if (method) sscanf(request, "%10s", method);
+		if (method) sscanf(request, "%16s", method);
 		if (resource) sscanf(request, "%*s%s", resource);
-		if (proto) sscanf(request, "%*s%*s%10s", proto);
+		if (proto) sscanf(request, "%*s%*s%32s", proto);
 	}
 
 	if (request) free(request);
