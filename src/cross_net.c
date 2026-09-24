@@ -1011,9 +1011,10 @@ bool http_parse(int sock, char* method, char* resource, char* proto, key_data_li
 /*----------------------------------------------------------------------------*/
 bool http_parse_simple(int sock, char **request, key_data_list_t* rkd_list, char** body, int* len) {
 	char line[1024];
-	uint32_t i, timeout = 250;
+	int i, timeout = 250;
 	key_data_t* rkd = rkd_list->kd;
 
+	// in case there is nothing to do
 	rkd[0].key = NULL;
 
 	if ((i = http_read_line(sock, line, sizeof(line), timeout, true)) <= 0) {
@@ -1025,18 +1026,22 @@ bool http_parse_simple(int sock, char **request, key_data_list_t* rkd_list, char
 
 	if (request) *request = strdup(line);
 
-	i = *len = 0;
+	i = 0;
+	if (len) *len = 0;
 		
 	while (http_read_line(sock, line, sizeof(line), timeout, true) > 0) {
 
 		LOG_DEBUG("sock: %u, received %s", sock, line);
 
 		// line folding should be deprecated
-		if (i && rkd[i].key && (line[0] == ' ' || line[0] == '\t')) {
+		if (i && (line[0] == ' ' || line[0] == '\t')) {
+			if (rkd_list->count && i >= rkd_list->count - 1) continue;
+
 			unsigned j;
 			for (j = 0; j < strlen(line); j++) if (line[j] != ' ' && line[j] != '\t') break;
-			rkd[i].data = realloc(rkd[i].data, strlen(rkd[i].data) + strlen(line + j) + 1);
-			strcat(rkd[i].data, line + j);
+			rkd[i-1].data = realloc(rkd[i-1].data, strlen(rkd[i-1].data) + strlen(line + j) + 1 + 1);
+			strcat(rkd[i-1].data, " ");
+			strcat(rkd[i-1].data, line + j);
 			continue;
 		}
 
@@ -1049,19 +1054,22 @@ bool http_parse_simple(int sock, char **request, key_data_list_t* rkd_list, char
 		}
 
 		*dp = 0;
+		char *value = strltrim(dp + 1);
+
+		if (len && !strcasecmp(line, "Content-Length")) *len = atol(value);
+
+		// don't record new headers if full but continue processing
+		if (rkd_list->count && i >= rkd_list->count - 1) continue;
+
 		rkd[i].key = strdup(line);
-		rkd[i].data = strdup(strltrim(dp + 1));
-
-		if (len && !strcasecmp(rkd[i].key, "Content-Length")) *len = atol(rkd[i].data);
-
-		if (!rkd_list->count || i < rkd_list->count - 1) rkd[++i].key = NULL;
-		else break;
+		rkd[i].data = strdup(value);
+		rkd[++i].key = NULL;
 	}
 
-	if (len && *len > 0) {
+	if (body && len && *len > 0) {
 		int size = 0;
-
 		*body = malloc(*len + 1);
+
 		while (*body && size < *len) {
 			int bytes = recv(sock, *body + size, *len - size, 0);
 			if (bytes <= 0) break;
@@ -1070,7 +1078,7 @@ bool http_parse_simple(int sock, char **request, key_data_list_t* rkd_list, char
 
 		if (*body) (*body)[*len] = '\0';
 
-		if (!*body || size != *len) {
+		if (body && (!*body || size != *len)) {
 			LOG_ERROR("content length receive error %d %d", *len, size);
 		}
 	}
