@@ -1081,6 +1081,7 @@ bool http_parse_simple(int sock, char **request, key_data_list_t* rkd_list, char
 
 		if (body && (!*body || size != *len)) {
 			LOG_ERROR("content length receive error %d %d", *len, size);
+			*len = size;
 		}
 	}
 
