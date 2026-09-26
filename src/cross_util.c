@@ -657,6 +657,7 @@ char* xml_encode(char* src)
 		}
 	}
 
+	*q = '\0';
 	return res;
 }
 
