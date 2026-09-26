@@ -158,10 +158,13 @@ int SendARP(in_addr_t src, in_addr_t dst, uint8_t mac[], uint32_t * size) {
 	strncpy(areq.arp_dev, "eth0", 15);
 
 	if (ioctl(s, SIOCGARP, (caddr_t) &areq) == -1) {
+		close(s);
 		return -1;
 	}
 
 	memcpy(mac, &(areq.arp_ha.sa_data), *size);
+	close(s);
+
 	return 0;
 }
 #elif OSX
@@ -552,9 +555,7 @@ void set_nosigpipe(int sd) {
 /*----------------------------------------------------------------------------*/
 bool tcp_connect(int sd, struct sockaddr_in peer) {
 	for (size_t count = 0; count < 2; count++) {
-		if (connect(sd, (struct sockaddr*) &peer, sizeof(struct sockaddr)) < 0) {
-			return true;
-		}
+		if (!connect(sd, (struct sockaddr*) &peer, sizeof(struct sockaddr))) return true;
 		usleep(100 * 1000);
 	}
 
@@ -912,7 +913,7 @@ static void* http_pico_thread(void* arg) {
 			if (n > 0 && FD_ISSET(client->sock, &wfds)) {
 				size_t bytes = min(8192, client->source->len - client->position);
 				int sent = send(client->sock, client->source->body + client->position, bytes, 0);
-				if (sent > 0) client->position += bytes;
+				if (sent > 0) client->position += sent;
 
 				// close connection and erase context if done
 				if (sent <= 0 || client->position == client->source->len) {

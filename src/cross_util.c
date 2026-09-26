@@ -22,6 +22,9 @@
 #endif
 #endif
 
+// must be before HAS_PTHREAD
+#include "cross_util.h"
+
 #ifdef HAS_PTHREAD
 #define mutex_lock(m) pthread_mutex_lock(m)
 #define mutex_unlock(m) pthread_mutex_unlock(m)
@@ -33,7 +36,6 @@
 #define mutex_unlock(m)
 #endif
 
-#include "cross_util.h"
 #include "cross_log.h"
 
 /*----------------------------------------------------------------------------*/
@@ -64,6 +66,9 @@ void queue_init(cross_queue_t *queue, bool mutex, void (*cleanup)(void*)) {
 #elif defined(_WIN32)
 		queue->mutex = (HANDLE*) malloc(sizeof(HANDLE));
 		*queue->mutex = CreateMutex(NULL, FALSE, NULL);
+#else
+		LOG_ERROR("Can't use mutex with that build");
+		exit(-1);
 #endif
 	}
 }
@@ -407,7 +412,7 @@ int hex2bytes(char* hex, uint8_t** bytes) {
 
 /*---------------------------------------------------------------------------*/
 int bytes2hex(uint8_t* bytes, size_t len, char** hex) {
-	if (!*hex && (*hex = malloc(len*2)) == NULL) return 0;
+	if (!*hex && (*hex = malloc(len*2+1)) == NULL) return 0;
 
 	for (size_t i = 0; i < len; i++) {
 		sprintf(*hex + i * 2, "%02hhx", bytes[i]);
