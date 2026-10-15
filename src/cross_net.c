@@ -1101,16 +1101,19 @@ int http_read_line(int fd, char* line, int maxlen, int timeout, bool polling) {
 
 	for (i = 0; i < maxlen; i++) {
 		if (!polling || poll(&pfds, 1, timeout)) rval = recv(fd, &ch, 1, 0);
-		else return 0;
+		else rval = -2;
 
-		if (rval == -1) {
+		switch (rval) {
+		case -2:
+			LOG_ERROR("fd: %d timeout", fd);
+			*line = 0;
+			return -2;
+		case -1:
 			if (errno == EAGAIN) return 0;
 			LOG_ERROR("fd: %d read error: %s", fd, strerror(errno));
 			return -1;
-		}
-
-		if (rval == 0) {
-			LOG_INFO("disconnected on the other end %u", fd);
+		case 0:
+			LOG_INFO("disconnected on the other end %d", fd);
 			return 0;
 		}
 
