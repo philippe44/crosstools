@@ -996,7 +996,7 @@ static struct http_pico_source_s* handle_connection(int sock) {
 /*----------------------------------------------------------------------------*/
 bool http_parse(int sock, char* method, char* resource, char* proto, key_data_list_t* rkd, char** body, int* len) {
 	char* request = NULL;
-	bool res = http_parse_simple(sock, &request, rkd, body, len);
+	bool res = http_parse_simple(sock, &request, rkd, body, len, 0);
 
 	if (res && request) {
 		if (method) sscanf(request, "%15s", method);
@@ -1010,15 +1010,15 @@ bool http_parse(int sock, char* method, char* resource, char* proto, key_data_li
 }
 
 /*----------------------------------------------------------------------------*/
-bool http_parse_simple(int sock, char **request, key_data_list_t* rkd_list, char** body, int* len) {
+bool http_parse_simple(int sock, char **request, key_data_list_t* rkd_list, char** body, int* len, int timeout) {
 	char line[1024];
-	int i, timeout = 250;
+	int i;
 	key_data_t* rkd = rkd_list->kd;
 
 	// in case there is nothing to do
 	rkd[0].key = NULL;
 
-	if ((i = http_read_line(sock, line, sizeof(line), timeout, true)) <= 0) {
+	if ((i = http_read_line(sock, line, sizeof(line), timeout ? timeout : 500, true)) <= 0) {
 		if (i < 0) {
 			LOG_ERROR("cannot read method", NULL);
 		}
@@ -1030,7 +1030,7 @@ bool http_parse_simple(int sock, char **request, key_data_list_t* rkd_list, char
 	i = 0;
 	if (len) *len = 0;
 		
-	while (http_read_line(sock, line, sizeof(line), timeout, true) > 0) {
+	while (http_read_line(sock, line, sizeof(line), 500, true) > 0) {
 
 		LOG_DEBUG("sock: %u, received %s", sock, line);
 
