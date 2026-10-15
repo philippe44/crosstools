@@ -1101,7 +1101,10 @@ int http_read_line(int fd, char* line, int maxlen, int timeout, bool polling) {
 
 	for (i = 0; i < maxlen; i++) {
 		if (!polling || poll(&pfds, 1, timeout)) rval = recv(fd, &ch, 1, 0);
-		else return 0;
+		else {
+			*line = 0;  // NUL-terminate partial line for debugging
+			return 0;
+		}
 
 		if (rval == -1) {
 			if (errno == EAGAIN) return 0;
