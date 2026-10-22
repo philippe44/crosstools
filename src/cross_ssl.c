@@ -24,6 +24,7 @@
 #include <openssl/bio.h>
 #include <openssl/evp.h>
 #include <openssl/srp.h>
+#include <openssl/kdf.h>
 
 #ifndef SSL_STATIC_LIB
 static void *SSLhandle = NULL;
@@ -254,6 +255,70 @@ SYMDECL(SRP_Calc_u, BIGNUM*, 3, const BIGNUM*, A, const BIGNUM*, B, const BIGNUM
 SYMDECL(SRP_Calc_client_key, BIGNUM*, 6, const BIGNUM*, N, const BIGNUM*, B, const BIGNUM*, g, const BIGNUM*, x, const BIGNUM*, a, const BIGNUM*, u);
 SYMDECL(SHA1, unsigned char*, 3, const unsigned char*, d, size_t, n, unsigned char*, md);
 
+// used by libraop's HomeKit pairing (AirPlay 2): SRP-6a over SHA-512, HKDF, ChaCha20-Poly1305, Ed25519 verify
+SYMDECL(BN_CTX_new, BN_CTX*, 0);
+SYMDECLV(BN_CTX_free, void, 1, BN_CTX*, c);
+SYMDECL(BN_add, int, 3, BIGNUM*, r, const BIGNUM*, a, const BIGNUM*, b);
+SYMDECL(BN_sub, int, 3, BIGNUM*, r, const BIGNUM*, a, const BIGNUM*, b);
+SYMDECL(BN_mul, int, 4, BIGNUM*, r, const BIGNUM*, a, const BIGNUM*, b, BN_CTX*, ctx);
+SYMDECL(BN_div, int, 5, BIGNUM*, dv, BIGNUM*, rem, const BIGNUM*, m, const BIGNUM*, d, BN_CTX*, ctx);
+SYMDECL(BN_mod_add, int, 5, BIGNUM*, r, const BIGNUM*, a, const BIGNUM*, b, const BIGNUM*, m, BN_CTX*, ctx);
+SYMDECL(BN_mod_exp, int, 5, BIGNUM*, r, const BIGNUM*, a, const BIGNUM*, p, const BIGNUM*, m, BN_CTX*, ctx);
+SYMDECL(BN_hex2bn, int, 2, BIGNUM**, a, const char*, str);
+SYMDECL(BN_is_zero, int, 1, const BIGNUM*, a);
+
+SYMDECL(SHA224, unsigned char*, 3, const unsigned char*, d, size_t, n, unsigned char*, md);
+SYMDECL(SHA256, unsigned char*, 3, const unsigned char*, d, size_t, n, unsigned char*, md);
+SYMDECL(SHA384, unsigned char*, 3, const unsigned char*, d, size_t, n, unsigned char*, md);
+SYMDECL(SHA512, unsigned char*, 3, const unsigned char*, d, size_t, n, unsigned char*, md);
+SYMDECL(EVP_sha1, const EVP_MD*, 0);
+SYMDECL(EVP_sha224, const EVP_MD*, 0);
+SYMDECL(EVP_sha256, const EVP_MD*, 0);
+SYMDECL(EVP_sha384, const EVP_MD*, 0);
+SYMDECL(EVP_sha512, const EVP_MD*, 0);
+SYMDECL(EVP_DigestInit_ex, int, 3, EVP_MD_CTX*, ctx, const EVP_MD*, type, ENGINE*, impl);
+SYMDECL(EVP_DigestUpdate, int, 3, EVP_MD_CTX*, ctx, const void*, d, size_t, cnt);
+SYMDECL(EVP_DigestFinal, int, 3, EVP_MD_CTX*, ctx, unsigned char*, md, unsigned int*, s);
+SYMDECL(EVP_DigestVerifyInit, int, 5, EVP_MD_CTX*, ctx, EVP_PKEY_CTX**, pctx, const EVP_MD*, type, ENGINE*, e, EVP_PKEY*, pkey);
+SYMDECL(EVP_DigestVerify, int, 5, EVP_MD_CTX*, ctx, const unsigned char*, sigret, size_t, siglen, const unsigned char*, tbs, size_t, tbslen);
+// named EVP_MD_size in OpenSSL 1.1, see cross_ssl_load
+SYMDECL(EVP_MD_get_size, int, 1, const EVP_MD*, md);
+
+SYMDECL(EVP_chacha20_poly1305, const EVP_CIPHER*, 0);
+SYMDECL(EVP_CIPHER_CTX_set_padding, int, 2, EVP_CIPHER_CTX*, c, int, pad);
+SYMDECL(EVP_EncryptInit_ex, int, 5, EVP_CIPHER_CTX*, ctx, const EVP_CIPHER*, cipher, ENGINE*, impl, const unsigned char*, key, const unsigned char*, iv);
+SYMDECL(EVP_EncryptFinal_ex, int, 3, EVP_CIPHER_CTX*, ctx, unsigned char*, out, int*, outl);
+SYMDECL(EVP_DecryptInit_ex, int, 5, EVP_CIPHER_CTX*, ctx, const EVP_CIPHER*, cipher, ENGINE*, impl, const unsigned char*, key, const unsigned char*, iv);
+SYMDECL(EVP_DecryptUpdate, int, 5, EVP_CIPHER_CTX*, ctx, unsigned char*, out, int*, outl, const unsigned char*, in, int, inl);
+SYMDECL(EVP_DecryptFinal_ex, int, 3, EVP_CIPHER_CTX*, ctx, unsigned char*, outm, int*, outl);
+
+SYMDECL(EVP_PKEY_CTX_new_id, EVP_PKEY_CTX*, 2, int, id, ENGINE*, e);
+SYMDECL(EVP_PKEY_CTX_ctrl, int, 6, EVP_PKEY_CTX*, ctx, int, keytype, int, optype, int, cmd, int, p1, void*, p2);
+
+// in OpenSSL 1.1 the HKDF setters are macros over EVP_PKEY_CTX_ctrl (and EVP_PKEY_OP_DERIVE is 1 << 10 there)
+#define SHIM_HKDF_OP_DERIVE (1 << 10)
+
+static int shim_EVP_PKEY_CTX_set_hkdf_md(EVP_PKEY_CTX* ctx, const EVP_MD* md) {
+	return EVP_PKEY_CTX_ctrl(ctx, -1, SHIM_HKDF_OP_DERIVE, EVP_PKEY_CTRL_HKDF_MD, 0, (void*) md);
+}
+
+static int shim_EVP_PKEY_CTX_set1_hkdf_salt(EVP_PKEY_CTX* ctx, const unsigned char* salt, int saltlen) {
+	return EVP_PKEY_CTX_ctrl(ctx, -1, SHIM_HKDF_OP_DERIVE, EVP_PKEY_CTRL_HKDF_SALT, saltlen, (void*) salt);
+}
+
+static int shim_EVP_PKEY_CTX_set1_hkdf_key(EVP_PKEY_CTX* ctx, const unsigned char* key, int keylen) {
+	return EVP_PKEY_CTX_ctrl(ctx, -1, SHIM_HKDF_OP_DERIVE, EVP_PKEY_CTRL_HKDF_KEY, keylen, (void*) key);
+}
+
+static int shim_EVP_PKEY_CTX_add1_hkdf_info(EVP_PKEY_CTX* ctx, const unsigned char* info, int infolen) {
+	return EVP_PKEY_CTX_ctrl(ctx, -1, SHIM_HKDF_OP_DERIVE, EVP_PKEY_CTRL_HKDF_INFO, infolen, (void*) info);
+}
+
+SHIMDECL(EVP_PKEY_CTX_set_hkdf_md, int, 2, EVP_PKEY_CTX*, ctx, const EVP_MD*, md);
+SHIMDECL(EVP_PKEY_CTX_set1_hkdf_salt, int, 3, EVP_PKEY_CTX*, ctx, const unsigned char*, salt, int, saltlen);
+SHIMDECL(EVP_PKEY_CTX_set1_hkdf_key, int, 3, EVP_PKEY_CTX*, ctx, const unsigned char*, key, int, keylen);
+SHIMDECL(EVP_PKEY_CTX_add1_hkdf_info, int, 3, EVP_PKEY_CTX*, ctx, const unsigned char*, info, int, infolen);
+
 bool cross_ssl_load(void) {
 	CRYPThandle = dlopen_try(LIBCRYPTO, RTLD_NOW);
 	SSLhandle = dlopen_try(LIBSSL, RTLD_NOW);
@@ -350,6 +415,49 @@ bool cross_ssl_load(void) {
 	SYMLOAD(CRYPThandle, SRP_Calc_u);
 	SYMLOAD(CRYPThandle, SRP_Calc_client_key);
 	SYMLOAD(CRYPThandle, SHA1);
+
+	SYMLOAD(CRYPThandle, BN_CTX_new);
+	SYMLOAD(CRYPThandle, BN_CTX_free);
+	SYMLOAD(CRYPThandle, BN_add);
+	SYMLOAD(CRYPThandle, BN_sub);
+	SYMLOAD(CRYPThandle, BN_mul);
+	SYMLOAD(CRYPThandle, BN_div);
+	SYMLOAD(CRYPThandle, BN_mod_add);
+	SYMLOAD(CRYPThandle, BN_mod_exp);
+	SYMLOAD(CRYPThandle, BN_hex2bn);
+	SYMLOAD(CRYPThandle, BN_is_zero);
+
+	SYMLOAD(CRYPThandle, SHA224);
+	SYMLOAD(CRYPThandle, SHA256);
+	SYMLOAD(CRYPThandle, SHA384);
+	SYMLOAD(CRYPThandle, SHA512);
+	SYMLOAD(CRYPThandle, EVP_sha1);
+	SYMLOAD(CRYPThandle, EVP_sha224);
+	SYMLOAD(CRYPThandle, EVP_sha256);
+	SYMLOAD(CRYPThandle, EVP_sha384);
+	SYMLOAD(CRYPThandle, EVP_sha512);
+	SYMLOAD(CRYPThandle, EVP_DigestInit_ex);
+	SYMLOAD(CRYPThandle, EVP_DigestUpdate);
+	SYMLOAD(CRYPThandle, EVP_DigestFinal);
+	SYMLOAD(CRYPThandle, EVP_DigestVerifyInit);
+	SYMLOAD(CRYPThandle, EVP_DigestVerify);
+	SYMLOAD(CRYPThandle, EVP_MD_get_size);
+	if (!SYM(EVP_MD_get_size)) SYMLOADA(CRYPThandle, EVP_MD_get_size, "EVP_MD_size");
+
+	SYMLOAD(CRYPThandle, EVP_chacha20_poly1305);
+	SYMLOAD(CRYPThandle, EVP_CIPHER_CTX_set_padding);
+	SYMLOAD(CRYPThandle, EVP_EncryptInit_ex);
+	SYMLOAD(CRYPThandle, EVP_EncryptFinal_ex);
+	SYMLOAD(CRYPThandle, EVP_DecryptInit_ex);
+	SYMLOAD(CRYPThandle, EVP_DecryptUpdate);
+	SYMLOAD(CRYPThandle, EVP_DecryptFinal_ex);
+
+	SYMLOAD(CRYPThandle, EVP_PKEY_CTX_new_id);
+	SYMLOAD(CRYPThandle, EVP_PKEY_CTX_ctrl);
+	SYMLOAD(CRYPThandle, EVP_PKEY_CTX_set_hkdf_md);
+	SYMLOAD(CRYPThandle, EVP_PKEY_CTX_set1_hkdf_salt);
+	SYMLOAD(CRYPThandle, EVP_PKEY_CTX_set1_hkdf_key);
+	SYMLOAD(CRYPThandle, EVP_PKEY_CTX_add1_hkdf_info);
 
 	OPENSSL_init_ssl(0, NULL);
 
