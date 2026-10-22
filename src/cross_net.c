@@ -476,7 +476,7 @@ bool ping_host(struct in_addr host, int wait) {
 	FD_SET(sock, &rfds);
 	struct timeval timeout = { 0, wait * 1000 };
 
-	if (!wait || select(sock, &rfds, NULL, NULL, &timeout) > 0) {
+	if (!wait || select(sock + 1, &rfds, NULL, NULL, &timeout) > 0) {
 		socklen_t addrlen = sizeof(addr);
 		char buffer[sizeof(icmp) + IP_HEADER_SIZE];
 
