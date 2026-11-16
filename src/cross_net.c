@@ -456,6 +456,11 @@ bool ping_host(struct in_addr host, int wait) {
 
 	int sock = socket(AF_INET, SOCK_RAW, IPPROTO_ICMP);
 	bool alive = false;
+#if !WIN
+	// a raw socket needs root (CAP_NET_RAW on Linux): fall back to the unprivileged ICMP socket
+	if (sock < 0) sock = socket(AF_INET, SOCK_DGRAM, IPPROTO_ICMP);
+#endif
+	if (sock < 0) return false;
 
 	struct sockaddr_in addr;
 	memset(&addr, 0, sizeof(addr));
@@ -480,9 +485,12 @@ bool ping_host(struct in_addr host, int wait) {
 		socklen_t addrlen = sizeof(addr);
 		char buffer[sizeof(icmp) + IP_HEADER_SIZE];
 
-		if (recvfrom(sock, (void*)&buffer, sizeof(buffer), 0, (struct sockaddr*)&addr, &addrlen) > 0) {
-			struct icmp_s* icmp = (struct icmp_s*)(buffer + IP_HEADER_SIZE);
-			if (icmp->type == 0) alive = true;
+		int n = recvfrom(sock, (void*)&buffer, sizeof(buffer), 0, (struct sockaddr*)&addr, &addrlen);
+		if (n > 0) {
+			// raw sockets (and DGRAM ICMP on BSD/macOS) return the IP header, DGRAM ICMP on Linux does not
+			int offset = (((unsigned char) buffer[0] >> 4) == 4 && n >= (int) (IP_HEADER_SIZE + ICMP_HEADER_SIZE)) ? ((unsigned char) buffer[0] & 0x0f) * 4 : 0;
+			struct icmp_s* icmp = (struct icmp_s*)(buffer + offset);
+			if (n >= offset + ICMP_HEADER_SIZE && icmp->type == ICMP_REPLY) alive = true;
 		}
 	}
 
